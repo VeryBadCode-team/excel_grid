@@ -28,3 +28,4 @@
 .packages
 build/
 .fvm/flutter_sdk/
+/.fvm/flutter_sdk/
