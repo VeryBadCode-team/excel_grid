@@ -7,6 +7,7 @@ class CellThemeMaterial extends CellTheme {
   const CellThemeMaterial({
     double width = MaterialExcelSizes.cellWidth,
     double height = MaterialExcelSizes.cellHeight,
+    double cellPadding = 8,
     Color backgroundColor = Colors.transparent,
     BorderSide borderSide = const BorderSide(
       width: 0.5,
@@ -15,6 +16,7 @@ class CellThemeMaterial extends CellTheme {
   }) : super(
           width: width,
           height: height,
+    cellPadding: cellPadding,
           backgroundColor: backgroundColor,
           borderSide: borderSide,
         );
