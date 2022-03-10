@@ -1,5 +1,6 @@
 import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scrollbar_button.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/vertical_scrollbar/vertical_scrollbar.dart';
 import 'package:excel_grid/src/utils/custom_border.dart';
@@ -43,7 +44,14 @@ class VerticalScrollbarContainer extends StatelessWidget {
               Icons.arrow_drop_up,
               size: 13,
             ),
-            onTap: () {},
+            onTap: () {
+              scrollController.handleEvent(
+                ButtonScrolledEvent(
+                  horizontalOffset:  0,
+                  verticalOffset: -1,
+                ),
+              );
+            },
           ),
           ScrollbarButton(
             visibleBorders: const <AppendBorder>{AppendBorder.top},
@@ -51,7 +59,14 @@ class VerticalScrollbarContainer extends StatelessWidget {
               Icons.arrow_drop_down,
               size: 13,
             ),
-            onTap: () {},
+            onTap: () {
+              scrollController.handleEvent(
+                ButtonScrolledEvent(
+                  horizontalOffset:  0,
+                  verticalOffset: 1,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -78,7 +93,7 @@ class VerticalScrollbarContainer extends StatelessWidget {
   }
 
   Widget _buildScrollbarArea(BoxConstraints constraints) {
-    scrollController.updateMaxVerticalScrollOffset(constraints.maxHeight);
+    scrollController.setVerticalViewport(constraints.maxHeight);
 
     return Column(
       children: <Widget>[

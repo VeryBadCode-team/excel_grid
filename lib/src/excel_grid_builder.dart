@@ -1,6 +1,6 @@
 import 'package:excel_grid/src/dto/grid_position.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/ui/cells/cell_builder.dart';
 import 'package:excel_grid/src/ui/cells/cell_end.dart';
 import 'package:excel_grid/src/ui/cells/cell_narrow.dart';
@@ -38,8 +38,8 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
   @override
   void initState() {
     scrollController = ExcelScrollController(
-      maxRows: widget.maxRows,
-      maxColumns: widget.maxColumns,
+      rowsCount: widget.maxRows,
+      columnsCount: widget.maxColumns,
       visibleRows: widget.visibleVerticalCellCount - 5,
       visibleColumns: widget.visibleHorizontalCellCount - 4,
     )..addListener(() {

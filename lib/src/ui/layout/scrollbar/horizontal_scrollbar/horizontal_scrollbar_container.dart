@@ -1,5 +1,6 @@
 import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/horizontal_scrollbar/hotizontal_scrollbar.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scrollbar_button.dart';
 import 'package:excel_grid/src/utils/custom_border.dart';
@@ -43,7 +44,14 @@ class HorizontalScrollbarContainer extends StatelessWidget {
               Icons.arrow_left,
               size: 13,
             ),
-            onTap: () {},
+            onTap: () {
+              scrollController.handleEvent(
+                ButtonScrolledEvent(
+                  horizontalOffset: -1,
+                  verticalOffset: 0,
+                ),
+              );
+            },
           ),
           ScrollbarButton(
             visibleBorders: const <AppendBorder>{AppendBorder.left},
@@ -51,7 +59,14 @@ class HorizontalScrollbarContainer extends StatelessWidget {
               Icons.arrow_right,
               size: 13,
             ),
-            onTap: () {},
+            onTap: () {
+              scrollController.handleEvent(
+                ButtonScrolledEvent(
+                  horizontalOffset: 1,
+                  verticalOffset: 0,
+                ),
+              );
+            },
           ),
           const ScrollbarButton(
             visibleBorders: <AppendBorder>{AppendBorder.left},
@@ -81,7 +96,7 @@ class HorizontalScrollbarContainer extends StatelessWidget {
   }
 
   Widget _buildScrollbarArea(BoxConstraints constraints) {
-    scrollController.updateMaxHorizontalScrollOffset(constraints.maxWidth);
+    scrollController.setHorizontalViewport(constraints.maxWidth);
 
     return Row(
       children: <Widget>[

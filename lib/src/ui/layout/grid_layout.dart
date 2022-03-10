@@ -1,4 +1,4 @@
-import 'package:excel_grid/src/model/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/horizontal_scrollbar/horizontal_scrollbar_container.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/vertical_scrollbar/vertical_scrollbar_container.dart';
 import 'package:flutter/material.dart';
@@ -40,14 +40,14 @@ class GridLayout extends StatelessWidget {
               ),
               VerticalScrollbarContainer(
                 scrollController: scrollController,
-                maxRows: scrollController.maxRows,
+                maxRows: scrollController.rowsCount,
               )
             ],
           ),
         ),
         HorizontalScrollbarContainer(
           scrollController: scrollController,
-          maxColumns: scrollController.maxColumns,
+          maxColumns: scrollController.columnsCount,
         ),
       ],
     );

@@ -1,4 +1,6 @@
-import 'package:excel_grid/src/model/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
+import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_states.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scroll_thumb.dart';
 import 'package:flutter/material.dart';
 
@@ -33,9 +35,10 @@ class _VerticalScrollbar extends State<VerticalScrollbar> {
 
     widget.scrollController.addListener(() {
       if (mounted) {
-        if (widget.scrollController.state is MouseScrollState) {
+        ScrollState scrollState = widget.scrollController.state;
+        if (scrollState is VerticalScrolledState && scrollState.scrollSource != ScrollSource.scrollbar) {
           setState(() {
-            _updateBarOffset(widget.scrollController.offset.dy / widget.scrollController.offsetStep.dy);
+            _updateBarOffset(widget.scrollController.offset.dy / widget.scrollController.verticalStep);
           });
         }
       }
@@ -63,9 +66,13 @@ class _VerticalScrollbar extends State<VerticalScrollbar> {
 
     _updateBarOffset(newBarOffset);
 
-    double scrollPosition = barOffset * widget.scrollController.offsetStep.dy;
-    widget.scrollController.state = ScrollbarScrollState();
-    widget.scrollController.jump(Offset(widget.scrollController.offset.dx, scrollPosition));
+    double scrollPosition = barOffset * widget.scrollController.verticalStep;
+    widget.scrollController.handleEvent(
+      ScrollbarScrolledEvent(
+        horizontalOffset: widget.scrollController.offset.dx,
+        verticalOffset: scrollPosition,
+      ),
+    );
     setState(() {});
   }
 
