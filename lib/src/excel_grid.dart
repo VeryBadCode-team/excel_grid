@@ -3,6 +3,7 @@ import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme_material.dart';
 import 'package:excel_grid/src/excel_grid_builder.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
+import 'package:excel_grid/src/model/grid_data.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/alphabet_cell_title_generator.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/numeric_cell_title_generator.dart';
@@ -11,11 +12,13 @@ import 'package:flutter/cupertino.dart';
 class ExcelGrid extends StatefulWidget {
   final int maxRows;
   final int maxColumns;
+  final GridData gridData;
   final CellTitleGenerator horizontalCellTitleGenerator;
   final CellTitleGenerator verticalCellTitleGenerator;
   final ExcelGridTheme theme;
 
   const ExcelGrid({
+    required this.gridData,
     this.maxRows = 100,
     this.maxColumns = 20,
     this.horizontalCellTitleGenerator = const AlphabetCellTitleGenerator(),
@@ -56,6 +59,7 @@ class _ExcelGrid extends State<ExcelGrid> {
             return ExcelGridBuilder(
               maxRows: widget.maxRows,
               maxColumns: widget.maxColumns,
+              gridData: widget.gridData,
               visibleVerticalCellCount: verticalCellCount,
               visibleHorizontalCellCount: horizontalCellCount,
               horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,

@@ -10,7 +10,6 @@ abstract class SelectionEvent {
 }
 
 class SingleCellSelectEvent extends SelectionEvent {
-  late final SelectionController selectionController;
   final CellPosition cellPosition;
 
   SingleCellSelectEvent(this.cellPosition);
@@ -23,7 +22,6 @@ class SingleCellSelectEvent extends SelectionEvent {
 }
 
 class MultiCellSelectStartEvent extends SelectionEvent {
-  late final SelectionController selectionController;
   final CellPosition fromPosition;
 
   MultiCellSelectStartEvent({
@@ -41,7 +39,6 @@ class MultiCellSelectStartEvent extends SelectionEvent {
 }
 
 class MultiCellSelectUpdateEvent extends SelectionEvent {
-  late final SelectionController selectionController;
   final CellPosition toPosition;
 
   MultiCellSelectUpdateEvent(this.toPosition);
@@ -286,6 +283,16 @@ class SelectAllEvent extends MultiCellSelectEndEvent {
         ),
       ),
     );
+    selectionController.notifyShouldUpdate();
+  }
+}
+
+class CellEditingEvent extends SingleCellSelectEvent {
+  CellEditingEvent(CellPosition cellPosition) : super(cellPosition);
+
+  @override
+  void execute(SelectionController selectionController) {
+    selectionController.state = CellEditingState(cellPosition);
     selectionController.notifyShouldUpdate();
   }
 }

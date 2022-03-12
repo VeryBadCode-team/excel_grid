@@ -206,3 +206,6 @@ class SelectedAllState extends MultiSelectedEndState {
   }) : super(from: from, to: to);
 }
 
+class CellEditingState extends SingleSelectedState {
+  CellEditingState(CellPosition cellPosition) : super(cellPosition);
+}

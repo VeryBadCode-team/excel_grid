@@ -24,9 +24,18 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Column(
-          children: const <Widget>[
+          children: <Widget>[
             Expanded(
-              child: ExcelGrid(),
+              child: ExcelGrid(
+                gridData: GridData(
+                  data: <String, Map<String, dynamic>>{
+                    '4': <String, dynamic>{
+                      'B': 'Dominik',
+                      'C': 'Pająk',
+                    }
+                  },
+                ),
+              ),
             ),
           ],
         ),

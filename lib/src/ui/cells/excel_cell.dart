@@ -5,6 +5,7 @@ import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
+import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/ui/cells/cell_container.dart';
 import 'package:excel_grid/src/ui/cells/types/excel_text_cell.dart';
 import 'package:excel_grid/src/utils/enums/append_border.dart';
@@ -24,10 +25,16 @@ class ExcelCell extends StatefulWidget {
 
 class _ExcelCell extends State<ExcelCell> {
   final SelectionController selectionController = globalLocator<SelectionController>();
+  final StorageManager storageManager = globalLocator<StorageManager>();
 
   @override
   void initState() {
     selectionController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    storageManager.addListener(() {
       if (mounted) {
         setState(() {});
       }
@@ -57,6 +64,9 @@ class _ExcelCell extends State<ExcelCell> {
         onTap: () {
           selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
         },
+        onDoubleTap: () {
+          selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
+        },
         onPanStart: (_) {
           selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
         },
@@ -66,19 +76,32 @@ class _ExcelCell extends State<ExcelCell> {
         child: CellContainer(
           height: theme.cellTheme.height,
           width: theme.cellTheme.width,
-          cellPadding: theme.cellTheme.cellPadding,
           theme: theme,
-          isEditing: false,
+          isEditing: isEditing,
           isSelectedCell: isSelected,
           multiSelectionBorder: multiSelectionBorder,
           readOnly: false,
           hasFocus: false,
           isStartSelectionCell: isStartSelectionCell,
           isEndSelectionCell: false,
-          child: const ExcelTextCell(),
+          child: ExcelTextCell(
+            cellPosition: widget.cellPosition,
+            value: storageManager.getDataOnPosition(widget.cellPosition),
+            editing: isEditing,
+            cellPadding: theme.cellTheme.cellPadding,
+          ),
         ),
       ),
     );
+  }
+
+  bool get isEditing {
+    SelectionState state = selectionController.state;
+    if (state is CellEditingState) {
+      bool isEditingCell = state.cellPosition == widget.cellPosition;
+      return isEditingCell;
+    }
+    return false;
   }
 
   bool get isSelected {

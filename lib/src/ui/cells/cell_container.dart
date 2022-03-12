@@ -12,7 +12,6 @@ class CellContainer extends StatelessWidget {
   final bool isSelectedCell;
   final bool isStartSelectionCell;
   final bool isEndSelectionCell;
-  final double cellPadding;
   final ExcelGridTheme theme;
   final Set<AppendBorder> multiSelectionBorder;
 
@@ -23,7 +22,6 @@ class CellContainer extends StatelessWidget {
     required this.hasFocus,
     required this.isEditing,
     required this.isSelectedCell,
-    required this.cellPadding,
     required this.child,
     required this.theme,
     required this.isStartSelectionCell,
@@ -38,31 +36,28 @@ class CellContainer extends StatelessWidget {
       width: width,
       height: height,
       decoration: _boxDecoration(),
-      child: Padding(
-        // New - Customisable cellPadding
-        padding: EdgeInsets.symmetric(
-          horizontal: cellPadding,
-        ),
-        child: Container(
+      child: Container(
           clipBehavior: Clip.hardEdge,
           height: height,
           alignment: Alignment.centerLeft,
           decoration: const BoxDecoration(),
           child: child,
         ),
-      ),
     );
   }
 
   BoxDecoration _boxDecoration() {
-    if (isEditing) {
-      return BoxDecoration(
-        color: theme.cellTheme.backgroundColor,
-        border: Border.fromBorderSide(theme.selectionTheme.primaryBorderSide),
-      );
-    } else if (isStartSelectionCell) {
+    if (isStartSelectionCell) {
       return BoxDecoration(
         color: theme.selectionTheme.backgroundColor,
+        boxShadow: isEditing ? <BoxShadow>[
+          const BoxShadow(
+            color: Color(0x3c404326),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: Offset(0, 0),
+          ),
+        ]: null,
         border: Border.fromBorderSide(theme.selectionTheme.primaryBorderSide),
       );
     } else if (isEndSelectionCell) {

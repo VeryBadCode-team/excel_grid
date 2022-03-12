@@ -1,7 +1,11 @@
+import 'package:excel_grid/excel_grid.dart';
 import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/grid_config.dart';
+import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
+import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
+import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/ui/cells/cell_builder.dart';
 import 'package:excel_grid/src/ui/layout/grid_layout.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
@@ -15,6 +19,7 @@ class ExcelGridBuilder extends StatefulWidget {
   final int visibleVerticalCellCount;
   final CellTitleGenerator horizontalCellTitleGenerator;
   final CellTitleGenerator verticalCellTitleGenerator;
+  final GridData gridData;
 
   const ExcelGridBuilder({
     required this.visibleHorizontalCellCount,
@@ -23,6 +28,7 @@ class ExcelGridBuilder extends StatefulWidget {
     required this.maxColumns,
     required this.horizontalCellTitleGenerator,
     required this.verticalCellTitleGenerator,
+    required this.gridData,
     Key? key,
   }) : super(key: key);
 
@@ -31,22 +37,33 @@ class ExcelGridBuilder extends StatefulWidget {
 }
 
 class _ExcelGridBuilder extends State<ExcelGridBuilder> {
-  late final ExcelScrollController scrollController;
+  final ExcelScrollController scrollController = globalLocator<ExcelScrollController>();
+  final SelectionController selectionController = globalLocator<SelectionController>();
+  final StorageManager storageManager = globalLocator<StorageManager>();
+  final GridConfig gridConfig = globalLocator<GridConfig>();
 
   @override
   void initState() {
-    scrollController = globalLocator<ExcelScrollController>()
+    scrollController
       ..init(
         visibleRows: widget.visibleVerticalCellCount - 5,
         visibleColumns: widget.visibleHorizontalCellCount - 4,
-      );
+      )
+      ..addListener(() {
+        SelectionState state = selectionController.state;
+        if( state is CellEditingState) {
+          selectionController.state = SingleSelectedState(state.cellPosition);
+        }
+      });
 
-    globalLocator<GridConfig>().init(
+    gridConfig.init(
       rowsCount: widget.maxRows,
       columnsCount: widget.maxColumns,
       horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
       verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
     );
+
+    storageManager.init(widget.gridData);
 
     super.initState();
   }
