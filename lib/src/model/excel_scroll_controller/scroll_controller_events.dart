@@ -1,5 +1,7 @@
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_states.dart';
+import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:flutter/material.dart';
 
 abstract class ScrollEvent {
@@ -34,16 +36,18 @@ abstract class ScrolledEvent extends ScrollEvent {
   Offset prepareScrollOffset();
 
   Offset _getLimitedOffset(Offset scrollOffset) {
+    GridConfig gridConfig = globalLocator<GridConfig>();
+
     final double translatedX = _cutToRange(
       value: scrollOffset.dx,
       viewportItemsCount: scrollController.visibleColumns,
-      allItemsCount: scrollController.columnsCount,
+      allItemsCount: gridConfig.columnsCount,
     );
 
     final double translatedY = _cutToRange(
       value: scrollOffset.dy,
       viewportItemsCount: scrollController.visibleRows,
-      allItemsCount: scrollController.rowsCount,
+      allItemsCount: gridConfig.rowsCount,
     );
     return Offset(
       translatedX,

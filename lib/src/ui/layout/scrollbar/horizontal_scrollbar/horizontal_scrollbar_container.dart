@@ -1,6 +1,8 @@
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
+import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/horizontal_scrollbar/hotizontal_scrollbar.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scrollbar_button.dart';
 import 'package:excel_grid/src/utils/custom_border.dart';
@@ -10,11 +12,9 @@ import 'package:flutter/material.dart';
 
 class HorizontalScrollbarContainer extends StatelessWidget {
   final ExcelScrollController scrollController;
-  final int maxColumns;
 
   const HorizontalScrollbarContainer({
     required this.scrollController,
-    required this.maxColumns,
     Key? key,
   }) : super(key: key);
 
@@ -96,7 +96,8 @@ class HorizontalScrollbarContainer extends StatelessWidget {
   }
 
   Widget _buildScrollbarArea(BoxConstraints constraints) {
-    scrollController.setHorizontalViewport(constraints.maxWidth);
+    GridConfig gridConfig = globalLocator<GridConfig>();
+    scrollController.setHorizontalViewport(gridConfig.columnsCount, constraints.maxWidth);
 
     return Row(
       children: <Widget>[

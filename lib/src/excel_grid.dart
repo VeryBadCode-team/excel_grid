@@ -1,3 +1,4 @@
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme_material.dart';
 import 'package:excel_grid/src/excel_grid_builder.dart';
@@ -7,7 +8,7 @@ import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.d
 import 'package:excel_grid/src/utils/cell_title_generator/numeric_cell_title_generator.dart';
 import 'package:flutter/cupertino.dart';
 
-class ExcelGrid extends StatelessWidget {
+class ExcelGrid extends StatefulWidget {
   final int maxRows;
   final int maxColumns;
   final CellTitleGenerator horizontalCellTitleGenerator;
@@ -24,9 +25,21 @@ class ExcelGrid extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<StatefulWidget> createState() => _ExcelGrid();
+}
+
+class _ExcelGrid extends State<ExcelGrid> {
+  @override
+  void initState() {
+    initLocator();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+
     return InheritedExcelTheme(
-      theme: theme,
+      theme: widget.theme,
       child: SizedBox(
         width: double.infinity,
         height: double.infinity,
@@ -41,12 +54,12 @@ class ExcelGrid extends StatelessWidget {
               InheritedExcelTheme.of(context).theme.cellTheme.height,
             );
             return ExcelGridBuilder(
-              maxRows: maxRows,
-              maxColumns: maxColumns,
+              maxRows: widget.maxRows,
+              maxColumns: widget.maxColumns,
               visibleVerticalCellCount: verticalCellCount,
               visibleHorizontalCellCount: horizontalCellCount,
-              horizontalCellTitleGenerator: horizontalCellTitleGenerator,
-              verticalCellTitleGenerator: verticalCellTitleGenerator,
+              horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
+              verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
             );
           },
         ),

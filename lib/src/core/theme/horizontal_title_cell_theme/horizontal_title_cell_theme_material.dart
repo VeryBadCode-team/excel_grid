@@ -14,7 +14,7 @@ class HorizontalTitleCellThemeMaterial extends HorizontalTitleCellTheme {
     ),
     BorderSide borderSide = const BorderSide(
       color: MaterialExcelPalette.gray2_100,
-      width: 0.5,
+      width: 0.25,
     ),
   }) : super(
           width: width,

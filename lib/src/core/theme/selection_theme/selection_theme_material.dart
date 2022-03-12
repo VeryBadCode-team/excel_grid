@@ -13,7 +13,7 @@ class SelectionThemeMaterial extends SelectionTheme {
       width: 0.5,
       color: MaterialExcelPalette.blue1_100,
     ),
-    Color backgroundColor = MaterialExcelPalette.blue1_10,
+    Color backgroundColor = const Color(0xFFE7F0FD),
     Color selectorColor = MaterialExcelPalette.blue1_100,
   }) : super(
           primaryBorderSide: primaryBorderSide,

@@ -12,4 +12,9 @@ class CellPosition extends Equatable {
 
   @override
   List<Object> get props => <Object>[verticalPosition.hashCode, horizontalPosition.hashCode];
+
+  @override
+  String toString() {
+    return '${horizontalPosition.key}${verticalPosition.key}';
+  }
 }

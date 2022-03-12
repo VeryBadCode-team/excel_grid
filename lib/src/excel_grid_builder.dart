@@ -1,10 +1,8 @@
-import 'package:excel_grid/src/dto/grid_position.dart';
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
+import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/cells/cell_builder.dart';
-import 'package:excel_grid/src/ui/cells/cell_end.dart';
-import 'package:excel_grid/src/ui/cells/cell_narrow.dart';
-import 'package:excel_grid/src/ui/cells/cell_title.dart';
 import 'package:excel_grid/src/ui/layout/grid_layout.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
 import 'package:excel_grid/src/widgets/scroll_detector.dart';
@@ -37,14 +35,18 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
 
   @override
   void initState() {
-    scrollController = ExcelScrollController(
+    scrollController = globalLocator<ExcelScrollController>()
+      ..init(
+        visibleRows: widget.visibleVerticalCellCount - 5,
+        visibleColumns: widget.visibleHorizontalCellCount - 4,
+      );
+
+    globalLocator<GridConfig>().init(
       rowsCount: widget.maxRows,
       columnsCount: widget.maxColumns,
-      visibleRows: widget.visibleVerticalCellCount - 5,
-      visibleColumns: widget.visibleHorizontalCellCount - 4,
-    )..addListener(() {
-        setState(() {});
-      });
+      horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
+      verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
+    );
 
     super.initState();
   }
@@ -89,14 +91,6 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
   }
 
   Widget _buildGridRow(int rowIndex) {
-    int verticalScrollOffsetValue = scrollController.offset.dy.round();
-    int calculatedRowIndex = rowIndex + verticalScrollOffsetValue;
-    String rowName = widget.verticalCellTitleGenerator.getTitle(calculatedRowIndex);
-    GridPosition rowGridPosition = GridPosition(
-      index: calculatedRowIndex,
-      key: rowName,
-    );
-
     return SizedBox(
       height: rowIndex == 0
           ? InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.height
@@ -105,95 +99,14 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
         physics: const NeverScrollableScrollPhysics(),
         scrollDirection: Axis.horizontal,
         itemCount: widget.visibleHorizontalCellCount + 3,
-        itemBuilder: (_, int columnIndex) => _buildCell(
-          rowGridPosition: rowGridPosition,
-          rowIndex: rowIndex,
+        itemBuilder: (_, int columnIndex) => CellBuilder(
+          scrollController: scrollController,
+          maxRows: widget.maxRows,
+          maxColumns: widget.maxColumns,
           columnIndex: columnIndex,
+          rowIndex: rowIndex,
         ),
       ),
     );
-  }
-
-  Widget _buildCell({required GridPosition rowGridPosition, required int rowIndex, required int columnIndex}) {
-    bool firstColumn = columnIndex == 0;
-    bool firstRow = rowIndex == 0;
-
-    int horizontalScrollOffsetValue = scrollController.offset.dx.round();
-    int calculatedColumnIndex = columnIndex + horizontalScrollOffsetValue;
-    String columnName = widget.horizontalCellTitleGenerator.getTitle(calculatedColumnIndex);
-    GridPosition columnGridPosition = GridPosition(
-      index: calculatedColumnIndex,
-      key: columnName,
-    );
-
-    if (columnGridPosition.index > widget.maxColumns || rowGridPosition.index > widget.maxRows) {
-      double height = InheritedExcelTheme.of(context).theme.cellTheme.height;
-      double width = InheritedExcelTheme.of(context).theme.cellTheme.width;
-
-      if (rowGridPosition.index == 0) {
-        height = InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.height;
-      }
-
-      if (columnGridPosition.index == 0) {
-        width = InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.width;
-      }
-
-      return CellEnd(
-        height: height,
-        width: width,
-        backgroundColor: const Color(0xFFF3F3F3),
-      );
-    }
-
-    if (firstRow && firstColumn) {
-      return _buildCellNarrow();
-    }
-    if (firstRow) {
-      return _buildVerticalTitleCell(columnGridPosition);
-    }
-    if (firstColumn) {
-      return _buildHorizontalTitleCell(rowGridPosition);
-    }
-
-    return _buildContentCell(
-      verticalGridPosition: rowGridPosition,
-      horizontalGridPosition: columnGridPosition,
-    );
-  }
-
-  Widget _buildCellNarrow() {
-    return const CellNarrow();
-  }
-
-  Widget _buildVerticalTitleCell(GridPosition verticalGridPosition) {
-    return CellTitle(
-      titleConfig: TitleConfig(
-        position: verticalGridPosition,
-        direction: GridDirection.vertical,
-      ),
-      scrollController: scrollController,
-      width: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.width,
-      height: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.width,
-      borderSide: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.borderSide,
-      backgroundColor: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.backgroundColor,
-    );
-  }
-
-  Widget _buildHorizontalTitleCell(GridPosition horizontalGridPosition) {
-    return CellTitle(
-      titleConfig: TitleConfig(
-        position: horizontalGridPosition,
-        direction: GridDirection.horizontal,
-      ),
-      scrollController: scrollController,
-      width: InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.width,
-      height: InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.width,
-      borderSide: InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.borderSide,
-      backgroundColor: InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.backgroundColor,
-    );
-  }
-
-  Widget _buildContentCell({required GridPosition horizontalGridPosition, required GridPosition verticalGridPosition}) {
-    return const CellBuilder();
   }
 }
