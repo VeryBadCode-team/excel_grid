@@ -1,3 +1,4 @@
+import 'package:excel_grid/src/dto/grid_position.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -18,5 +19,19 @@ class GridConfig extends ChangeNotifier {
     this.columnsCount = columnsCount;
     this.horizontalCellTitleGenerator = horizontalCellTitleGenerator;
     this.verticalCellTitleGenerator = verticalCellTitleGenerator;
+  }
+
+  GridPosition generateCellVertical(int index) {
+    return GridPosition(
+      key: verticalCellTitleGenerator.getTitle(index),
+      index: index,
+    );
+  }
+
+  GridPosition generateCellHorizontal(int index) {
+    return GridPosition(
+      key: horizontalCellTitleGenerator.getTitle(index),
+      index: index,
+    );
   }
 }

@@ -45,50 +45,56 @@ class _ExcelCell extends State<ExcelCell> {
   @override
   Widget build(BuildContext context) {
     ExcelGridTheme theme = InheritedExcelTheme.of(context).theme;
-    return MouseRegion(
-      onEnter: (_) {
-        bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
-        bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
-        if (rowSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.cellPosition.verticalPosition));
-        } else if (columnSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.cellPosition.horizontalPosition));
-        }
+    return Actions(
+      actions: {},
+      child: MouseRegion(
+        onEnter: (_) {
+          bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
+          bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
+          if (rowSelectionInProgress) {
+            selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.cellPosition.verticalPosition));
+          } else if (columnSelectionInProgress) {
+            selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.cellPosition.horizontalPosition));
+          }
 
-        bool selectionInProgress = selectionController.state is MultiSelectedOngoingState;
-        if (selectionInProgress) {
-          selectionController.handleEvent(MultiCellSelectUpdateEvent(widget.cellPosition));
-        }
-      },
-      child: GestureDetector(
-        onTap: () {
-          selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+          bool selectionInProgress = selectionController.state is MultiSelectedOngoingState;
+          if (selectionInProgress) {
+            selectionController.handleEvent(MultiCellSelectUpdateEvent(widget.cellPosition));
+          }
         },
-        onDoubleTap: () {
-          selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
-        },
-        onPanStart: (_) {
-          selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
-        },
-        onPanEnd: (_) {
-          selectionController.handleEvent(MultiCellSelectEndEvent());
-        },
-        child: CellContainer(
-          height: theme.cellTheme.height,
-          width: theme.cellTheme.width,
-          theme: theme,
-          isEditing: isEditing,
-          isSelectedCell: isSelected,
-          multiSelectionBorder: multiSelectionBorder,
-          readOnly: false,
-          hasFocus: false,
-          isStartSelectionCell: isStartSelectionCell,
-          isEndSelectionCell: false,
-          child: ExcelTextCell(
-            cellPosition: widget.cellPosition,
-            value: storageManager.getDataOnPosition(widget.cellPosition),
-            editing: isEditing,
-            cellPadding: theme.cellTheme.cellPadding,
+        child: GestureDetector(
+          onTap: () {
+            selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+          },
+          onDoubleTap: () {
+            SelectionState state = selectionController.state;
+            if (state is! CellEditingState) {
+              selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
+            }
+          },
+          onPanStart: (_) {
+            selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
+          },
+          onPanEnd: (_) {
+            selectionController.handleEvent(MultiCellSelectEndEvent());
+          },
+          child: CellContainer(
+            height: theme.cellTheme.height,
+            width: theme.cellTheme.width,
+            theme: theme,
+            isEditing: isEditing,
+            isSelectedCell: isSelected,
+            multiSelectionBorder: multiSelectionBorder,
+            readOnly: false,
+            hasFocus: false,
+            isStartSelectionCell: isStartSelectionCell,
+            isEndSelectionCell: false,
+            child: ExcelTextCell(
+              cellPosition: widget.cellPosition,
+              value: storageManager.getDataOnPosition(widget.cellPosition),
+              editing: isEditing,
+              cellPadding: theme.cellTheme.cellPadding,
+            ),
           ),
         ),
       ),

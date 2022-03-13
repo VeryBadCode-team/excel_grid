@@ -37,12 +37,12 @@ class CellContainer extends StatelessWidget {
       height: height,
       decoration: _boxDecoration(),
       child: Container(
-          clipBehavior: Clip.hardEdge,
-          height: height,
-          alignment: Alignment.centerLeft,
-          decoration: const BoxDecoration(),
-          child: child,
-        ),
+        clipBehavior: Clip.hardEdge,
+        height: height,
+        alignment: Alignment.centerLeft,
+        decoration: const BoxDecoration(),
+        child: child,
+      ),
     );
   }
 
@@ -50,14 +50,16 @@ class CellContainer extends StatelessWidget {
     if (isStartSelectionCell) {
       return BoxDecoration(
         color: theme.selectionTheme.backgroundColor,
-        boxShadow: isEditing ? <BoxShadow>[
-          const BoxShadow(
-            color: Color(0x3c404326),
-            spreadRadius: 2,
-            blurRadius: 6,
-            offset: Offset(0, 0),
-          ),
-        ]: null,
+        boxShadow: isEditing
+            ? <BoxShadow>[
+                const BoxShadow(
+                  color: Color(0x3c404326),
+                  spreadRadius: 2,
+                  blurRadius: 6,
+                  offset: Offset(0, 0),
+                ),
+              ]
+            : null,
         border: Border.fromBorderSide(theme.selectionTheme.primaryBorderSide),
       );
     } else if (isEndSelectionCell) {
@@ -69,23 +71,22 @@ class CellContainer extends StatelessWidget {
       return BoxDecoration(
         color: theme.selectionTheme.backgroundColor,
         border: Border(
-          top: multiSelectionBorder.contains(AppendBorder.top)
-              ? theme.selectionTheme.primaryBorderSide
-              : theme.selectionTheme.primaryBorderSide.copyWith(
-                  color: Colors.transparent,
-                ),
-          bottom: multiSelectionBorder.contains(AppendBorder.bottom)
-              ? theme.selectionTheme.primaryBorderSide
-              : theme.cellTheme.borderSide,
-          left: multiSelectionBorder.contains(AppendBorder.left)
-              ? theme.selectionTheme.primaryBorderSide
-              : theme.selectionTheme.primaryBorderSide.copyWith(
-                  color: Colors.transparent,
-                ),
-          right: multiSelectionBorder.contains(AppendBorder.right)
-              ? theme.selectionTheme.primaryBorderSide
-              : theme.cellTheme.borderSide,
-        ),
+            top: multiSelectionBorder.contains(AppendBorder.top)
+                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
+                : theme.selectionTheme.primaryBorderSide.copyWith(
+                    color: Colors.transparent,
+                  ),
+            bottom: multiSelectionBorder.contains(AppendBorder.bottom)
+                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
+                : theme.cellTheme.borderSide,
+            left: multiSelectionBorder.contains(AppendBorder.left)
+                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
+                : theme.selectionTheme.primaryBorderSide.copyWith(
+                    color: Colors.transparent,
+                  ),
+            right: multiSelectionBorder.contains(AppendBorder.right)
+                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
+                : theme.cellTheme.borderSide),
       );
     } else {
       return BoxDecoration(

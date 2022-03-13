@@ -1,16 +1,32 @@
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/dto/cell_position.dart';
 import 'package:excel_grid/src/dto/grid_position.dart';
+import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/cells/cell_title.dart';
 import 'package:excel_grid/src/utils/enums/append_border.dart';
 
-abstract class SelectionState {}
+abstract class SelectionState {
+  CellPosition get focusedCell;
 
-class DefaultSelectionState extends SelectionState {}
+  List<List<CellPosition>> get selectedCells;
+  List<CellPosition> get selectedCellsMerged;
+}
 
 class SingleSelectedState extends SelectionState {
   final CellPosition cellPosition;
 
   SingleSelectedState(this.cellPosition);
+
+  @override
+  CellPosition get focusedCell => cellPosition;
+
+  @override
+  List<List<CellPosition>> get selectedCells => <List<CellPosition>>[
+        <CellPosition>[cellPosition]
+      ];
+
+  @override
+  List<CellPosition> get selectedCellsMerged => <CellPosition>[cellPosition];
 
   @override
   String toString() {
@@ -26,6 +42,64 @@ class MultiSelectedState extends SelectionState {
     required this.from,
     required this.to,
   });
+
+  @override
+  CellPosition get focusedCell => from;
+
+  @override
+  List<List<CellPosition>> get selectedCells {
+    GridConfig gridConfig = globalLocator<GridConfig>();
+    List<List<CellPosition>> selected = List<List<CellPosition>>.empty(growable: true);
+    CellPosition selectionFrom = calcLeftTopNarrow();
+    CellPosition selectionTo = calcRightBottomNarrow();
+    for (int y = selectionFrom.verticalPosition.index; y <= selectionTo.verticalPosition.index; y++) {
+      List<CellPosition> rowCells = List<CellPosition>.empty(growable: true);
+      for (int x = selectionFrom.horizontalPosition.index; x <= selectionTo.horizontalPosition.index; x++) {
+        rowCells.add(CellPosition(
+          verticalPosition: gridConfig.generateCellVertical(y),
+          horizontalPosition: gridConfig.generateCellHorizontal(x),
+        ));
+      }
+      selected.add(rowCells);
+    }
+    return selected;
+  }
+
+  @override
+  List<CellPosition> get selectedCellsMerged {
+    List<List<CellPosition>> allCells = selectedCells;
+    List<CellPosition> mergedCells = List<CellPosition>.empty(growable: true);
+    for( List<CellPosition> row in allCells ) {
+      mergedCells.addAll(row);
+    }
+    return mergedCells;
+  }
+
+  CellPosition calcLeftTopNarrow() {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return from;
+    }
+    if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return to;
+    }
+    if( horizontalSelectionReversed ) {
+      return CellPosition(verticalPosition: to.verticalPosition, horizontalPosition: from.horizontalPosition);
+    }
+    return CellPosition(verticalPosition: from.verticalPosition, horizontalPosition: to.horizontalPosition);
+  }
+
+  CellPosition calcRightBottomNarrow() {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return to;
+    }
+    if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return from;
+    }
+    if( verticalSelectionReversed ) {
+      return CellPosition(verticalPosition: to.verticalPosition, horizontalPosition: from.horizontalPosition);
+    }
+    return CellPosition(verticalPosition: from.verticalPosition, horizontalPosition: to.horizontalPosition);
+  }
 
   bool isCellSelected(CellPosition cellPosition) {
     return compareCellBetweenPoints(
@@ -160,7 +234,6 @@ class RowSelectedState extends MultiSelectedEndState {
   }) : super(from: from, to: to);
 }
 
-
 class RowSelectOngoingState extends RowSelectedState {
   RowSelectOngoingState({
     required CellPosition from,
@@ -174,8 +247,6 @@ class RowSelectEndState extends RowSelectedState {
     required CellPosition to,
   }) : super(from: from, to: to);
 }
-
-
 
 class ColumnSelectedState extends MultiSelectedEndState {
   ColumnSelectedState({
@@ -198,7 +269,6 @@ class ColumnSelectEndState extends ColumnSelectedState {
   }) : super(from: from, to: to);
 }
 
-
 class SelectedAllState extends MultiSelectedEndState {
   SelectedAllState({
     required CellPosition from,
@@ -208,4 +278,13 @@ class SelectedAllState extends MultiSelectedEndState {
 
 class CellEditingState extends SingleSelectedState {
   CellEditingState(CellPosition cellPosition) : super(cellPosition);
+}
+
+class CellEditingKeyPressedState extends CellEditingState {
+  final String keyValue;
+
+  CellEditingKeyPressedState({
+    required CellPosition cellPosition,
+    required this.keyValue,
+  }) : super(cellPosition);
 }

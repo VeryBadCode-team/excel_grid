@@ -1,9 +1,11 @@
 import 'package:excel_grid/excel_grid.dart';
 import 'package:excel_grid/src/core/locator.dart';
+import 'package:excel_grid/src/excel_keyboard_listener.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
+import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/ui/cells/cell_builder.dart';
@@ -11,6 +13,7 @@ import 'package:excel_grid/src/ui/layout/grid_layout.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
 import 'package:excel_grid/src/widgets/scroll_detector.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 class ExcelGridBuilder extends StatefulWidget {
   final int maxRows;
@@ -41,6 +44,10 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
   final SelectionController selectionController = globalLocator<SelectionController>();
   final StorageManager storageManager = globalLocator<StorageManager>();
   final GridConfig gridConfig = globalLocator<GridConfig>();
+  final FocusNode focusNode = FocusNode();
+  // final List<KeyboardAction> keyboardActions = <KeyboardAction>[
+  //
+  // ]
 
   @override
   void initState() {
@@ -51,7 +58,7 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
       )
       ..addListener(() {
         SelectionState state = selectionController.state;
-        if( state is CellEditingState) {
+        if (state is CellEditingState) {
           selectionController.state = SingleSelectedState(state.cellPosition);
         }
       });
@@ -63,6 +70,10 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
       verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
     );
 
+    selectionController.addListener(() {
+        focusNode.requestFocus();
+    });
+
     storageManager.init(widget.gridData);
 
     super.initState();
@@ -73,15 +84,61 @@ class _ExcelGridBuilder extends State<ExcelGridBuilder> {
     scrollController.contentWidth = _calcContentWidth();
     scrollController.contentHeight = _calcContentHeight();
 
-    return ScrollDetector(
-      scrollController: scrollController,
-      child: GridLayout(
-        verticalCellCount: widget.visibleVerticalCellCount,
-        horizontalCellCount: widget.visibleHorizontalCellCount,
+    return  ScrollDetector(
         scrollController: scrollController,
-        child: _buildExcelGrid(),
+        child: ExcelKeyboardListener(
+          gridFocusNode: focusNode,
+          child: GridLayout(
+          verticalCellCount: widget.visibleVerticalCellCount,
+          horizontalCellCount: widget.visibleHorizontalCellCount,
+          scrollController: scrollController,
+          child: _buildExcelGrid(),
+        ),
       ),
     );
+  }
+
+  void _handleKeyEvent(RawKeyEvent event) {
+    print(event);
+    if (event is RawKeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.enter) {
+        SelectionState selectionState = selectionController.state;
+        if (selectionState is! CellEditingState) {
+          if (selectionState is SingleSelectedState) {
+            selectionController.handleEvent(CellEditingEvent(selectionState.cellPosition));
+          }
+          if (selectionState is MultiSelectedState) {
+            selectionController.handleEvent(CellEditingEvent(selectionState.from));
+          }
+        } else {
+          CellEditingState state = selectionController.state as CellEditingState;
+          selectionController.handleEvent(SingleCellSelectEvent(state.cellPosition));
+        }
+      } else {
+        SelectionState selectionState = selectionController.state;
+        if (selectionState is! CellEditingState) {
+          if (selectionState is SingleSelectedState) {
+            selectionController.handleEvent(
+                KeyPressedEvent(cellPosition: selectionState.cellPosition, keyValue: event.logicalKey.keyLabel));
+          }
+          if (selectionState is MultiSelectedState) {
+            selectionController
+                .handleEvent(KeyPressedEvent(cellPosition: selectionState.from, keyValue: event.logicalKey.keyLabel));
+          }
+        }
+      }
+    }
+    // if(event.logicalKey == LogicalKeyboardKey.enter) {
+    //   SelectionState selectionState = selectionController.state;
+    //   if( selectionState is! CellEditingState ) {
+    //     if( selectionState is SingleSelectedState) {
+    //       selectionController.handleEvent(CellEditingEvent(selectionState.cellPosition));
+    //     }
+    //     if( selectionState is MultiSelectedState) {
+    //       selectionController.handleEvent(CellEditingEvent(selectionState.from));
+    //     }
+    //   }
+    // }
   }
 
   double _calcContentWidth() {

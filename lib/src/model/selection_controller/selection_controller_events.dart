@@ -77,17 +77,11 @@ class SelectRowEvent extends MultiCellSelectEndEvent {
     GridConfig gridConfig = globalLocator<GridConfig>();
     selectionController.state = RowSelectedState(
       from: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(1),
         verticalPosition: rowPosition,
       ),
       to: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(gridConfig.columnsCount),
-          index: gridConfig.columnsCount,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(gridConfig.columnsCount),
         verticalPosition: rowPosition,
       ),
     );
@@ -109,17 +103,11 @@ class SelectMulitRowStartEvent extends MultiCellSelectEndEvent {
     GridConfig gridConfig = globalLocator<GridConfig>();
     selectionController.state = RowSelectOngoingState(
       from: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(1),
         verticalPosition: fromPosition,
       ),
       to: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(gridConfig.columnsCount),
-          index: gridConfig.columnsCount,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(gridConfig.columnsCount),
         verticalPosition: toPosition,
       ),
     );
@@ -138,10 +126,7 @@ class SelectMulitRowUpdateEvent extends MultiCellSelectEndEvent {
     selectionController.state = RowSelectOngoingState(
       from: (selectionController.state as RowSelectOngoingState).from,
       to: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(gridConfig.columnsCount),
-          index: gridConfig.columnsCount,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(gridConfig.columnsCount),
         verticalPosition: toPosition,
       ),
     );
@@ -173,17 +158,11 @@ class SelectColumnEvent extends MultiCellSelectEndEvent {
     selectionController.state = ColumnSelectedState(
       from: CellPosition(
         horizontalPosition: columnPosition,
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
+        verticalPosition: gridConfig.generateCellVertical(1),
       ),
       to: CellPosition(
         horizontalPosition: columnPosition,
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(gridConfig.rowsCount),
-          index: gridConfig.rowsCount,
-        ),
+        verticalPosition: gridConfig.generateCellVertical(gridConfig.rowsCount),
       ),
     );
     selectionController.notifyShouldUpdate();
@@ -205,17 +184,11 @@ class SelectMulitColumnStartEvent extends MultiCellSelectEndEvent {
     selectionController.state = ColumnSelectOngoingState(
       from: CellPosition(
         horizontalPosition: fromPosition,
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
+        verticalPosition: gridConfig.generateCellVertical(1),
       ),
       to: CellPosition(
         horizontalPosition: toPosition,
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(gridConfig.rowsCount),
-          index: gridConfig.columnsCount,
-        ),
+        verticalPosition: gridConfig.generateCellVertical(gridConfig.rowsCount),
       ),
     );
     selectionController.notifyShouldUpdate();
@@ -234,10 +207,7 @@ class SelectMulitColumnUpdateEvent extends MultiCellSelectEndEvent {
       from: (selectionController.state as ColumnSelectOngoingState).from,
       to: CellPosition(
         horizontalPosition: toPosition,
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(gridConfig.rowsCount),
-          index: gridConfig.rowsCount,
-        ),
+        verticalPosition: gridConfig.generateCellVertical(gridConfig.rowsCount),
       ),
     );
     selectionController.notifyShouldUpdate();
@@ -263,24 +233,12 @@ class SelectAllEvent extends MultiCellSelectEndEvent {
     GridConfig gridConfig = globalLocator<GridConfig>();
     selectionController.state = SelectedAllState(
       from: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(1),
-          index: 1,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(1),
+        verticalPosition: gridConfig.generateCellVertical(1),
       ),
       to: CellPosition(
-        horizontalPosition: GridPosition(
-          key: gridConfig.horizontalCellTitleGenerator.getTitle(gridConfig.columnsCount),
-          index: gridConfig.columnsCount,
-        ),
-        verticalPosition: GridPosition(
-          key: gridConfig.verticalCellTitleGenerator.getTitle(gridConfig.rowsCount),
-          index: gridConfig.rowsCount,
-        ),
+        horizontalPosition: gridConfig.generateCellHorizontal(gridConfig.columnsCount),
+        verticalPosition: gridConfig.generateCellVertical(gridConfig.rowsCount),
       ),
     );
     selectionController.notifyShouldUpdate();
@@ -293,6 +251,17 @@ class CellEditingEvent extends SingleCellSelectEvent {
   @override
   void execute(SelectionController selectionController) {
     selectionController.state = CellEditingState(cellPosition);
+    selectionController.notifyShouldUpdate();
+  }
+}
+
+class KeyPressedEvent extends CellEditingEvent {
+  final String keyValue;
+  KeyPressedEvent({required CellPosition cellPosition, required this.keyValue}) : super(cellPosition);
+
+  @override
+  void execute(SelectionController selectionController) {
+    selectionController.state = CellEditingKeyPressedState(cellPosition: cellPosition, keyValue: keyValue);
     selectionController.notifyShouldUpdate();
   }
 }
