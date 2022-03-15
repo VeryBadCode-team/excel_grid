@@ -1,5 +1,6 @@
 import 'package:excel_grid/src/dto/cell_position.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
+import 'package:excel_grid/src/utils/generators/csv_parser.dart';
 
 class CsvGenerator {
   final List<List<String>> lines;
@@ -16,7 +17,7 @@ class CsvGenerator {
     for (List<CellPosition> row in selectedCells) {
       List<String> rowValues = List<String>.empty(growable: true);
       for (CellPosition cellPosition in row) {
-        String? value = storageManager.getDataOnPosition(cellPosition);
+        String? value = storageManager.getCellData(cellPosition)?.asString;
         rowValues.add(value ?? '');
       }
       lines.add(rowValues);
@@ -27,19 +28,6 @@ class CsvGenerator {
   }
 
   String generateString({String seperator = ','}) {
-    List<String> parsedLines = List<String>.empty(growable: true);
-    for( List<String> line in lines ) {
-      List<String> parsedLine = List<String>.empty(growable: true);
-      for( String text in line ) {
-        text = text.replaceAll('"', '""');
-        bool hasSpecialCharacters = text.contains('\t') || text.contains('\n') || text.contains('.') || text.contains(',') || text.contains(';');
-        if( hasSpecialCharacters ) {
-          text = '"$text"';
-        }
-        parsedLine.add(text);
-      }
-      parsedLines.add(parsedLine.join(seperator));
-    }
-    return parsedLines.join('\n');
+    return CsvParser.toCsv(lines, seperator: seperator);
   }
 }

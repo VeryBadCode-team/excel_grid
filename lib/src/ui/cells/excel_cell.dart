@@ -2,6 +2,9 @@ import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
 import 'package:excel_grid/src/dto/cell_position.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
+import 'package:excel_grid/src/model/autofill_manager/autofill_manager.dart';
+import 'package:excel_grid/src/model/autofill_manager/autofill_manager_events.dart';
+import 'package:excel_grid/src/model/autofill_manager/autofill_manager_states.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
@@ -26,6 +29,7 @@ class ExcelCell extends StatefulWidget {
 class _ExcelCell extends State<ExcelCell> {
   final SelectionController selectionController = globalLocator<SelectionController>();
   final StorageManager storageManager = globalLocator<StorageManager>();
+  final AutofillManager autofillManager = globalLocator<AutofillManager>();
 
   @override
   void initState() {
@@ -39,66 +43,81 @@ class _ExcelCell extends State<ExcelCell> {
         setState(() {});
       }
     });
+    autofillManager.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     ExcelGridTheme theme = InheritedExcelTheme.of(context).theme;
-    return Actions(
-      actions: {},
-      child: MouseRegion(
-        onEnter: (_) {
-          bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
-          bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
-          if (rowSelectionInProgress) {
-            selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.cellPosition.verticalPosition));
-          } else if (columnSelectionInProgress) {
-            selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.cellPosition.horizontalPosition));
-          }
+    return MouseRegion(
+      onEnter: (_) {
+        bool autofillInProgress = autofillManager.state is AutofillOngoingState;
+        if (autofillInProgress) {
+          autofillManager.handleEvent(AutofillOngoing(widget.cellPosition));
+        }
 
-          bool selectionInProgress = selectionController.state is MultiSelectedOngoingState;
-          if (selectionInProgress) {
-            selectionController.handleEvent(MultiCellSelectUpdateEvent(widget.cellPosition));
+        bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
+        bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
+        if (rowSelectionInProgress) {
+          selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.cellPosition.verticalPosition));
+        } else if (columnSelectionInProgress) {
+          selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.cellPosition.horizontalPosition));
+        }
+
+        bool selectionInProgress = selectionController.state is MultiSelectedOngoingState;
+        if (selectionInProgress) {
+          selectionController.handleEvent(MultiCellSelectUpdateEvent(widget.cellPosition));
+        }
+      },
+      child: GestureDetector(
+        onTap: () {
+          selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+        },
+        onDoubleTap: () {
+          SelectionState state = selectionController.state;
+          if (state is! CellEditingState) {
+            selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
           }
         },
-        child: GestureDetector(
-          onTap: () {
-            selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
-          },
-          onDoubleTap: () {
-            SelectionState state = selectionController.state;
-            if (state is! CellEditingState) {
-              selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
-            }
-          },
-          onPanStart: (_) {
-            selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
-          },
-          onPanEnd: (_) {
-            selectionController.handleEvent(MultiCellSelectEndEvent());
-          },
-          child: CellContainer(
-            height: theme.cellTheme.height,
-            width: theme.cellTheme.width,
-            theme: theme,
-            isEditing: isEditing,
-            isSelectedCell: isSelected,
-            multiSelectionBorder: multiSelectionBorder,
-            readOnly: false,
-            hasFocus: false,
-            isStartSelectionCell: isStartSelectionCell,
-            isEndSelectionCell: false,
-            child: ExcelTextCell(
-              cellPosition: widget.cellPosition,
-              value: storageManager.getDataOnPosition(widget.cellPosition),
-              editing: isEditing,
-              cellPadding: theme.cellTheme.cellPadding,
-            ),
+        onPanStart: (_) {
+          selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
+        },
+        onPanEnd: (_) {
+          selectionController.handleEvent(MultiCellSelectEndEvent());
+        },
+        child: CellContainer(
+          height: theme.cellTheme.height,
+          width: theme.cellTheme.width,
+          theme: theme,
+          isEditing: isEditing,
+          isSelectedCell: isSelected,
+          multiSelectionBorder: multiSelectionBorder,
+          autofillBorder: autofillBorder,
+          readOnly: false,
+          hasFocus: false,
+          canAutofill: canAutofill,
+          isStartSelectionCell: isStartSelectionCell,
+          isEndSelectionCell: false,
+          cellPosition: widget.cellPosition,
+          child: ExcelTextCell(
+            cellPosition: widget.cellPosition,
+            value: storageManager.getCellData(widget.cellPosition),
+            editing: isEditing,
+            cellPadding: theme.cellTheme.cellPadding,
           ),
         ),
       ),
     );
+  }
+
+  bool get canAutofill {
+    SelectionState state = selectionController.state;
+    return widget.cellPosition == state.rightBottomCell && state is SelectionEndState;
   }
 
   bool get isEditing {
@@ -125,21 +144,25 @@ class _ExcelCell extends State<ExcelCell> {
 
   bool get isStartSelectionCell {
     SelectionState state = selectionController.state;
-    if (state is SingleSelectedState) {
-      return state.cellPosition == widget.cellPosition;
-    }
-    if (state is MultiSelectedState) {
-      return state.from == widget.cellPosition;
-    }
-    return false;
+    return widget.cellPosition == state.focusedCell;
   }
 
   bool get isEndSelectionCell {
     SelectionState state = selectionController.state;
-    if (state is MultiSelectedState) {
-      return state.to == widget.cellPosition;
+    return widget.cellPosition == state.lastFocusedCell;
+  }
+
+  Set<AppendBorder> get autofillBorder {
+    Set<AppendBorder> appendBorder = <AppendBorder>{};
+    AutofillState state = autofillManager.state;
+    if (state is AutofillOngoingState) {
+      if(!state.selectedCellsMerged.contains(widget.cellPosition)) {
+        return appendBorder;
+      }
+      appendBorder.addAll(state.isVerticalSelectionExtreme(widget.cellPosition));
+      appendBorder.addAll(state.isHorizontalSelectionExtreme(widget.cellPosition));
     }
-    return false;
+    return appendBorder;
   }
 
   Set<AppendBorder> get multiSelectionBorder {

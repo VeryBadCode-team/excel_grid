@@ -38,6 +38,7 @@ class MultiCellSelectStartEvent extends SelectionEvent {
   }
 }
 
+
 class MultiCellSelectUpdateEvent extends SelectionEvent {
   final CellPosition toPosition;
 
@@ -62,6 +63,25 @@ class MultiCellSelectEndEvent extends SelectionEvent {
     selectionController.state = MultiSelectedEndState(
       from: (selectionController.state as MultiSelectedOngoingState).from,
       to: (selectionController.state as MultiSelectedOngoingState).to,
+    );
+    selectionController.notifyShouldUpdate();
+  }
+}
+
+class MultiSelectEvent extends MultiCellSelectEndEvent {
+  final CellPosition toPosition;
+  final CellPosition fromPosition;
+
+  MultiSelectEvent({
+    required this.toPosition,
+    required this.fromPosition,
+  });
+
+  @override
+  void execute(SelectionController selectionController) {
+    selectionController.state = MultiSelectedEndState(
+      from: fromPosition,
+      to: toPosition,
     );
     selectionController.notifyShouldUpdate();
   }

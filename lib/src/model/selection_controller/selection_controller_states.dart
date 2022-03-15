@@ -8,11 +8,26 @@ import 'package:excel_grid/src/utils/enums/append_border.dart';
 abstract class SelectionState {
   CellPosition get focusedCell;
 
-  List<List<CellPosition>> get selectedCells;
+  CellPosition get lastFocusedCell;
+
+  CellPosition get leftTopCell;
+
+  CellPosition get leftBottomCell;
+
+  CellPosition get rightTopCell;
+
+  CellPosition get rightBottomCell;
+
+  List<List<CellPosition>> get selectedCellsByRows;
+
+  List<List<CellPosition>> get selectedCellsByColumns;
+
   List<CellPosition> get selectedCellsMerged;
 }
 
-class SingleSelectedState extends SelectionState {
+abstract class SelectionEndState {}
+
+class SingleSelectedState extends SelectionState with SelectionEndState {
   final CellPosition cellPosition;
 
   SingleSelectedState(this.cellPosition);
@@ -21,7 +36,15 @@ class SingleSelectedState extends SelectionState {
   CellPosition get focusedCell => cellPosition;
 
   @override
-  List<List<CellPosition>> get selectedCells => <List<CellPosition>>[
+  CellPosition get lastFocusedCell => cellPosition;
+
+  @override
+  List<List<CellPosition>> get selectedCellsByRows => <List<CellPosition>>[
+        <CellPosition>[cellPosition]
+      ];
+
+  @override
+  List<List<CellPosition>> get selectedCellsByColumns => <List<CellPosition>>[
         <CellPosition>[cellPosition]
       ];
 
@@ -32,6 +55,18 @@ class SingleSelectedState extends SelectionState {
   String toString() {
     return cellPosition.toString();
   }
+
+  @override
+  CellPosition get leftBottomCell => cellPosition;
+
+  @override
+  CellPosition get leftTopCell => cellPosition;
+
+  @override
+  CellPosition get rightBottomCell => cellPosition;
+
+  @override
+  CellPosition get rightTopCell => cellPosition;
 }
 
 class MultiSelectedState extends SelectionState {
@@ -47,11 +82,14 @@ class MultiSelectedState extends SelectionState {
   CellPosition get focusedCell => from;
 
   @override
-  List<List<CellPosition>> get selectedCells {
+  CellPosition get lastFocusedCell => to;
+
+  @override
+  List<List<CellPosition>> get selectedCellsByRows {
     GridConfig gridConfig = globalLocator<GridConfig>();
     List<List<CellPosition>> selected = List<List<CellPosition>>.empty(growable: true);
-    CellPosition selectionFrom = calcLeftTopNarrow();
-    CellPosition selectionTo = calcRightBottomNarrow();
+    CellPosition selectionFrom = leftTopCell;
+    CellPosition selectionTo = rightBottomCell;
     for (int y = selectionFrom.verticalPosition.index; y <= selectionTo.verticalPosition.index; y++) {
       List<CellPosition> rowCells = List<CellPosition>.empty(growable: true);
       for (int x = selectionFrom.horizontalPosition.index; x <= selectionTo.horizontalPosition.index; x++) {
@@ -66,39 +104,32 @@ class MultiSelectedState extends SelectionState {
   }
 
   @override
+  List<List<CellPosition>> get selectedCellsByColumns {
+    GridConfig gridConfig = globalLocator<GridConfig>();
+    List<List<CellPosition>> selected = List<List<CellPosition>>.empty(growable: true);
+    CellPosition selectionFrom = leftTopCell;
+    CellPosition selectionTo = rightBottomCell;
+    for (int x = selectionFrom.horizontalPosition.index; x <= selectionTo.horizontalPosition.index; x++) {
+      List<CellPosition> columnCells = List<CellPosition>.empty(growable: true);
+      for (int y = selectionFrom.verticalPosition.index; y <= selectionTo.verticalPosition.index; y++) {
+        columnCells.add(CellPosition(
+          verticalPosition: gridConfig.generateCellVertical(y),
+          horizontalPosition: gridConfig.generateCellHorizontal(x),
+        ));
+      }
+      selected.add(columnCells);
+    }
+    return selected;
+  }
+
+  @override
   List<CellPosition> get selectedCellsMerged {
-    List<List<CellPosition>> allCells = selectedCells;
+    List<List<CellPosition>> allCells = selectedCellsByRows;
     List<CellPosition> mergedCells = List<CellPosition>.empty(growable: true);
-    for( List<CellPosition> row in allCells ) {
+    for (List<CellPosition> row in allCells) {
       mergedCells.addAll(row);
     }
     return mergedCells;
-  }
-
-  CellPosition calcLeftTopNarrow() {
-    if (verticalSelectionReversed && horizontalSelectionReversed) {
-      return from;
-    }
-    if (!verticalSelectionReversed && !horizontalSelectionReversed) {
-      return to;
-    }
-    if( horizontalSelectionReversed ) {
-      return CellPosition(verticalPosition: to.verticalPosition, horizontalPosition: from.horizontalPosition);
-    }
-    return CellPosition(verticalPosition: from.verticalPosition, horizontalPosition: to.horizontalPosition);
-  }
-
-  CellPosition calcRightBottomNarrow() {
-    if (verticalSelectionReversed && horizontalSelectionReversed) {
-      return to;
-    }
-    if (!verticalSelectionReversed && !horizontalSelectionReversed) {
-      return from;
-    }
-    if( verticalSelectionReversed ) {
-      return CellPosition(verticalPosition: to.verticalPosition, horizontalPosition: from.horizontalPosition);
-    }
-    return CellPosition(verticalPosition: from.verticalPosition, horizontalPosition: to.horizontalPosition);
   }
 
   bool isCellSelected(CellPosition cellPosition) {
@@ -130,10 +161,10 @@ class MultiSelectedState extends SelectionState {
     bool isToExtreme = compareCellsVerticalPosition(cellPosition, to);
 
     if (isFromExtreme) {
-      appendBorder.add(verticalSelectionReversed ? AppendBorder.top : AppendBorder.bottom);
+      appendBorder.add(verticalSelectionReversed ? AppendBorder.bottom : AppendBorder.top);
     }
     if (isToExtreme) {
-      appendBorder.add(verticalSelectionReversed ? AppendBorder.bottom : AppendBorder.top);
+      appendBorder.add(verticalSelectionReversed ? AppendBorder.top : AppendBorder.bottom);
     }
     return appendBorder;
   }
@@ -144,10 +175,10 @@ class MultiSelectedState extends SelectionState {
     bool isToExtreme = compareCellsHorizontalPosition(cellPosition, to);
 
     if (isFromExtreme) {
-      appendBorder.add(horizontalSelectionReversed ? AppendBorder.left : AppendBorder.right);
+      appendBorder.add(horizontalSelectionReversed ? AppendBorder.right : AppendBorder.left);
     }
     if (isToExtreme) {
-      appendBorder.add(horizontalSelectionReversed ? AppendBorder.right : AppendBorder.left);
+      appendBorder.add(horizontalSelectionReversed ? AppendBorder.left : AppendBorder.right);
     }
     return appendBorder;
   }
@@ -161,11 +192,11 @@ class MultiSelectedState extends SelectionState {
   }
 
   bool get verticalSelectionReversed {
-    return from.verticalPosition.index < to.verticalPosition.index;
+    return from.verticalPosition.index > to.verticalPosition.index;
   }
 
   bool get horizontalSelectionReversed {
-    return from.horizontalPosition.index < to.horizontalPosition.index;
+    return from.horizontalPosition.index > to.horizontalPosition.index;
   }
 
   bool compareCellBetweenPoints({
@@ -208,8 +239,56 @@ class MultiSelectedState extends SelectionState {
   }
 
   @override
+  CellPosition get leftBottomCell {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return from.copyWith(horizontalPosition: to.horizontalPosition);
+    } else if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return from.copyWith(verticalPosition: to.verticalPosition);
+    } else if (horizontalSelectionReversed) {
+      return to;
+    }
+    return from;
+  }
+
+  @override
+  CellPosition get leftTopCell {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return to;
+    } else if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return from;
+    } else if (horizontalSelectionReversed) {
+      return from.copyWith(horizontalPosition: to.horizontalPosition);
+    }
+    return from.copyWith(verticalPosition: to.verticalPosition);
+  }
+
+  @override
+  CellPosition get rightBottomCell {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return from;
+    } else if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return to;
+    } else if (verticalSelectionReversed) {
+      return from.copyWith(horizontalPosition: to.horizontalPosition);
+    }
+    return from.copyWith(verticalPosition: to.verticalPosition);
+  }
+
+  @override
+  CellPosition get rightTopCell {
+    if (verticalSelectionReversed && horizontalSelectionReversed) {
+      return from.copyWith(verticalPosition: to.verticalPosition);
+    } else if (!verticalSelectionReversed && !horizontalSelectionReversed) {
+      return from.copyWith(horizontalPosition: to.horizontalPosition);
+    } else if (horizontalSelectionReversed) {
+      return from;
+    }
+    return to;
+  }
+
+  @override
   String toString() {
-    return '$from:$to';
+    return '$leftTopCell:$rightBottomCell';
   }
 }
 
@@ -220,7 +299,7 @@ class MultiSelectedOngoingState extends MultiSelectedState {
   }) : super(from: from, to: to);
 }
 
-class MultiSelectedEndState extends MultiSelectedState {
+class MultiSelectedEndState extends MultiSelectedState with SelectionEndState {
   MultiSelectedEndState({
     required CellPosition from,
     required CellPosition to,

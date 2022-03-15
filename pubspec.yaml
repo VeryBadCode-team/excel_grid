@@ -17,6 +17,9 @@ dependencies:
   # https://pub.dev/packages/equatable
   equatable: ^2.0.3
 
+  csv: ^5.0.1
+  dotted_border: ^2.0.0+2
+
   # Simple direct Service Locator that allows to decouple the interface from a concrete
   # implementation and to access the concrete implementation from everywhere in your App"
   # https://pub.dev/packages/get_it

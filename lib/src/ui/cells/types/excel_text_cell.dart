@@ -4,11 +4,12 @@ import 'package:excel_grid/src/model/selection_controller/selection_controller.d
 import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager_events.dart';
+import 'package:excel_grid/src/ui/cells/values/cell_value.dart';
 import 'package:flutter/material.dart';
 
 class ExcelTextCell extends StatefulWidget {
   final CellPosition cellPosition;
-  final String? value;
+  final CellValue? value;
   final bool editing;
   final double cellPadding;
 
@@ -84,8 +85,9 @@ class _ExcelTextCell extends State<ExcelTextCell> {
       child: SizedBox(
         width: double.infinity,
         child: Text(
-          widget.editing ? 'Editing' : widget.value ?? '',
+          widget.editing ? 'Editing' : widget.value?.asString ?? '',
           maxLines: 1,
+          // textAlign: widget.value is NumberCellValue ? TextAlign.end : TextAlign.start,
           overflow: TextOverflow.fade,
           softWrap: false,
         ),
@@ -105,6 +107,6 @@ class _ExcelTextCell extends State<ExcelTextCell> {
     if (selectionState is CellEditingKeyPressedState) {
       return selectionState.keyValue;
     }
-    return widget.value;
+    return widget.value?.asString;
   }
 }

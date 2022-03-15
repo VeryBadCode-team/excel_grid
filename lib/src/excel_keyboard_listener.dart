@@ -1,5 +1,6 @@
 import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/dto/cell_position.dart';
+import 'package:excel_grid/src/dto/grid_position.dart';
 import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/model/logging_action_dispatcher.dart';
 import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
@@ -7,7 +8,9 @@ import 'package:excel_grid/src/model/selection_controller/selection_controller_e
 import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/model/storage_manager/storage_manager_events.dart';
+import 'package:excel_grid/src/ui/cells/values/cell_value.dart';
 import 'package:excel_grid/src/utils/generators/csv_generator.dart';
+import 'package:excel_grid/src/utils/generators/csv_parser.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
@@ -190,7 +193,7 @@ class CopyAction extends Action<CopyIntent> {
     SelectionController selectionController = globalLocator<SelectionController>();
     StorageManager storageManager = globalLocator<StorageManager>();
     CsvGenerator selectionCsvGenerator = CsvGenerator.fromCells(
-      selectedCells: selectionController.state.selectedCells,
+      selectedCells: selectionController.state.selectedCellsByRows,
       storageManager: storageManager,
     );
     String selectedText = selectionCsvGenerator.generateString(seperator: '\t');
@@ -207,7 +210,6 @@ class DeleteAction extends Action<DeleteIntent> {
     StorageManager storageManager = globalLocator<StorageManager>();
     storageManager.handleEvent(ClearSelectedEvent(cells: selectionController.state.selectedCellsMerged));
   }
-
 }
 
 class CutIntent extends Intent {}
@@ -221,7 +223,44 @@ class CutAction extends Action<CutIntent> {
     DeleteAction deleteAction = DeleteAction();
     deleteAction.invoke(DeleteIntent());
   }
+}
 
+class PasteIntent extends Intent {}
+
+class PasteAction extends Action<PasteIntent> {
+  @override
+  Future<void> invoke(PasteIntent intent) async {
+    ClipboardData? clipboardData = await Clipboard.getData('text/plain');
+    if (clipboardData != null && clipboardData.text != null) {
+      SelectionController selectionController = globalLocator<SelectionController>();
+      StorageManager storageManager = globalLocator<StorageManager>();
+      GridConfig gridConfig = globalLocator<GridConfig>();
+      String clipboardValue = clipboardData.text!;
+      List<List<dynamic>> lines = CsvParser.fromCsv(clipboardValue, seperator: '\t');
+      List<CellPositionValue> cellValues = List<CellPositionValue>.empty(growable: true);
+      CellPosition currentCell = selectionController.state.focusedCell;
+      for (int y = 0; y < lines.length; y++) {
+        GridPosition positionY = gridConfig.generateCellVertical(currentCell.verticalPosition.index + y);
+        List<dynamic> words = lines[y];
+        for (int x = 0; x < words.length; x++) {
+          GridPosition positionX = gridConfig.generateCellHorizontal(currentCell.horizontalPosition.index + x);
+          cellValues.add(
+            CellPositionValue(
+              cellPosition: CellPosition(
+                verticalPosition: positionY,
+                horizontalPosition: positionX,
+              ),
+              value: CellValue.assign(words[x]),
+            ),
+          );
+        }
+      }
+      CellPosition firstSelectedPosition = cellValues.first.cellPosition;
+      CellPosition lastSelectedPosition = cellValues.last.cellPosition;
+      selectionController.handleEvent(MultiSelectEvent(fromPosition: firstSelectedPosition, toPosition: lastSelectedPosition));
+      storageManager.handleEvent(MultiCellEditedEvent(cellValues: cellValues));
+    }
+  }
 }
 
 class ExcelKeyboardListener extends StatefulWidget {
@@ -266,6 +305,7 @@ class _ExcelKeyboardListener extends State<ExcelKeyboardListener> {
         LogicalKeySet(LogicalKeyboardKey.copy): CopyIntent(),
         LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyC): CopyIntent(),
         LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyX): CutIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyV): PasteIntent(),
       },
       child: Actions(
         dispatcher: LoggingActionDispatcher(),
@@ -284,6 +324,7 @@ class _ExcelKeyboardListener extends State<ExcelKeyboardListener> {
           CopyIntent: CopyAction(),
           DeleteIntent: DeleteAction(),
           CutIntent: CutAction(),
+          PasteIntent: PasteAction(),
         },
         child: Focus(
           focusNode: widget.gridFocusNode,

@@ -17,4 +17,14 @@ class CellPosition extends Equatable {
   String toString() {
     return '${horizontalPosition.key}${verticalPosition.key}';
   }
+
+  CellPosition copyWith({
+    GridPosition? verticalPosition,
+    GridPosition? horizontalPosition,
+  }) {
+    return CellPosition(
+      verticalPosition: verticalPosition ?? this.verticalPosition,
+      horizontalPosition: horizontalPosition ?? this.horizontalPosition,
+    );
+  }
 }
