@@ -1,8 +1,6 @@
-import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
-import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/horizontal_scrollbar/hotizontal_scrollbar.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scrollbar_button.dart';
 import 'package:excel_grid/src/utils/custom_border.dart';
@@ -21,6 +19,8 @@ class HorizontalScrollbarContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 13,
+      width: double.infinity,
       decoration: BoxDecoration(
         border: CustomBorder.fromAppendBorder(
           borderSide: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.borderSide,
@@ -29,7 +29,6 @@ class HorizontalScrollbarContainer extends StatelessWidget {
           },
         ),
       ),
-      height: 13,
       child: Row(
         children: <Widget>[
           _buildVerticalCellTitleMock(context),
@@ -96,16 +95,13 @@ class HorizontalScrollbarContainer extends StatelessWidget {
   }
 
   Widget _buildScrollbarArea(BoxConstraints constraints) {
-    GridConfig gridConfig = globalLocator<GridConfig>();
-    scrollController.setHorizontalViewport(gridConfig.columnsCount, constraints.maxWidth);
-
     return Row(
       children: <Widget>[
         HorizontalScrollbar(
-          scrollController: scrollController,
+          constraints: constraints,
           thumbSize: ScrollUtils.calcThumbSize(
             contentSize: scrollController.contentWidth,
-            viewportSize: scrollController.horizontalViewport,
+            viewportSize: constraints.maxWidth,
           ),
           barMaxScrollExtent: constraints.maxWidth,
         ),

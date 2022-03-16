@@ -10,11 +10,15 @@ import 'package:excel_grid/src/core/theme/vertical_title_cell_theme/vertical_tit
 
 class ExcelGridThemeMaterial extends ExcelGridTheme {
   const ExcelGridThemeMaterial({
+    int verticalMarginCellsCount = 3,
+    int horizontalMarginCellsCount = 3,
     HorizontalTitleCellTheme horizontalTitleCellTheme = const HorizontalTitleCellThemeMaterial(),
     VerticalTitleCellTheme verticalTitleCellTheme = const VerticalTitleCellThemeMaterial(),
     SelectionTheme selectionTheme = const SelectionThemeMaterial(),
     CellTheme cellTheme = const CellThemeMaterial(),
   }) : super(
+          verticalMarginCellsCount: verticalMarginCellsCount,
+          horizontalMarginCellsCount: horizontalMarginCellsCount,
           horizontalTitleCellTheme: horizontalTitleCellTheme,
           verticalTitleCellTheme: verticalTitleCellTheme,
           selectionTheme: selectionTheme,

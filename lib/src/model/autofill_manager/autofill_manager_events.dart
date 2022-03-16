@@ -50,7 +50,6 @@ class AutofillOngoing extends AutofillEvent {
 
       int horizontalDiff = hoveredCell.horizontalPosition.index - rightBottomCell.horizontalPosition.index;
       int verticalDiff = hoveredCell.verticalPosition.index - rightBottomCell.verticalPosition.index;
-      print('$horizontalDiff ----- $verticalDiff');
       if (horizontalDiff <= 0 && verticalDiff <= 0) {
         return;
       }

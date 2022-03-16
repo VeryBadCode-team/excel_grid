@@ -1,8 +1,6 @@
-import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
-import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scrollbar_button.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/vertical_scrollbar/vertical_scrollbar.dart';
 import 'package:excel_grid/src/utils/custom_border.dart';
@@ -21,6 +19,8 @@ class VerticalScrollbarContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: 13,
+      height: double.infinity,
       decoration: BoxDecoration(
         border: CustomBorder.fromAppendBorder(
           borderSide: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.borderSide,
@@ -29,7 +29,6 @@ class VerticalScrollbarContainer extends StatelessWidget {
           },
         ),
       ),
-      width: 13,
       child: Column(
         children: <Widget>[
           _buildHorizontalCellTitleMock(context),
@@ -47,7 +46,7 @@ class VerticalScrollbarContainer extends StatelessWidget {
             onTap: () {
               scrollController.handleEvent(
                 ButtonScrolledEvent(
-                  horizontalOffset:  0,
+                  horizontalOffset: 0,
                   verticalOffset: -1,
                 ),
               );
@@ -62,7 +61,7 @@ class VerticalScrollbarContainer extends StatelessWidget {
             onTap: () {
               scrollController.handleEvent(
                 ButtonScrolledEvent(
-                  horizontalOffset:  0,
+                  horizontalOffset: 0,
                   verticalOffset: 1,
                 ),
               );
@@ -93,19 +92,17 @@ class VerticalScrollbarContainer extends StatelessWidget {
   }
 
   Widget _buildScrollbarArea(BoxConstraints constraints) {
-    GridConfig gridConfig = globalLocator<GridConfig>();
-    scrollController.setVerticalViewport(gridConfig.rowsCount, constraints.maxHeight);
-
     return Column(
       children: <Widget>[
         VerticalScrollbar(
-          scrollController: scrollController,
-          thumbSize: ScrollUtils.calcThumbSize(
-            contentSize: scrollController.contentHeight,
-            viewportSize: scrollController.verticalViewport,
+            constraints: constraints,
+            thumbSize: ScrollUtils.calcThumbSize(
+              contentSize: scrollController.contentHeight,
+              viewportSize: constraints.maxHeight,
+            ),
+            barMaxScrollExtent: constraints.maxHeight,
           ),
-          barMaxScrollExtent: constraints.maxHeight,
-        ),
+
       ],
     );
   }

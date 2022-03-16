@@ -1,6 +1,7 @@
 import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
 import 'package:excel_grid/src/dto/cell_position.dart';
+import 'package:excel_grid/src/excel_keyboard_listener.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/autofill_manager/autofill_manager.dart';
 import 'package:excel_grid/src/model/autofill_manager/autofill_manager_events.dart';
@@ -13,6 +14,7 @@ import 'package:excel_grid/src/ui/cells/cell_container.dart';
 import 'package:excel_grid/src/ui/cells/types/excel_text_cell.dart';
 import 'package:excel_grid/src/utils/enums/append_border.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 class ExcelCell extends StatefulWidget {
   final CellPosition cellPosition;
@@ -76,7 +78,13 @@ class _ExcelCell extends State<ExcelCell> {
       },
       child: GestureDetector(
         onTap: () {
-          selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+          print('IS SHIFT PRESSED = ${ExcelKeyboardListener.of(context).keysPressed}');
+          print('IS SHIFT PRESSED = ${ExcelKeyboardListener.of(context).keysPressed.contains(LogicalKeyboardKey.shiftLeft)}');
+          if( ExcelKeyboardListener.of(context).keysPressed.contains(LogicalKeyboardKey.shiftLeft)) {
+            selectionController.handleEvent(ExtendSelection(to: widget.cellPosition));
+          } else {
+            selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+          }
         },
         onDoubleTap: () {
           SelectionState state = selectionController.state;

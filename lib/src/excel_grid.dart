@@ -4,6 +4,7 @@ import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme_mate
 import 'package:excel_grid/src/excel_grid_builder.dart';
 import 'package:excel_grid/src/inherited_excel_theme.dart';
 import 'package:excel_grid/src/model/grid_data.dart';
+import 'package:excel_grid/src/ui/layout/selection_field.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/alphabet_cell_title_generator.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
 import 'package:excel_grid/src/utils/cell_title_generator/numeric_cell_title_generator.dart';
@@ -40,40 +41,36 @@ class _ExcelGrid extends State<ExcelGrid> {
 
   @override
   Widget build(BuildContext context) {
-
     return InheritedExcelTheme(
       theme: widget.theme,
       child: SizedBox(
         width: double.infinity,
         height: double.infinity,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            int horizontalCellCount = _calcCellCount(
-              constraints.maxWidth,
-              InheritedExcelTheme.of(context).theme.cellTheme.width,
-            );
-            int verticalCellCount = _calcCellCount(
-              constraints.maxHeight,
-              InheritedExcelTheme.of(context).theme.cellTheme.height,
-            );
-            return ExcelGridBuilder(
-              maxRows: widget.maxRows,
-              maxColumns: widget.maxColumns,
-              gridData: widget.gridData,
-              visibleVerticalCellCount: verticalCellCount,
-              visibleHorizontalCellCount: horizontalCellCount,
-              horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
-              verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
-            );
-          },
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: const <Widget>[
+                SelectionField(),
+              ],
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  return ExcelGridBuilder(
+                    maxRows: widget.maxRows,
+                    maxColumns: widget.maxColumns,
+                    gridData: widget.gridData,
+                    horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
+                    verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
+                    constraints: constraints,
+                    theme: widget.theme,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  int _calcCellCount(double width, double cellSize) {
-    double screenWidth = width;
-    int cellCount = (screenWidth / cellSize).round();
-    return cellCount + 1;
   }
 }

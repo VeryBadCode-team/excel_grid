@@ -7,14 +7,10 @@ import 'package:flutter/material.dart';
 class GridLayout extends StatelessWidget {
   final Widget child;
   final ExcelScrollController scrollController;
-  final int horizontalCellCount;
-  final int verticalCellCount;
 
   const GridLayout({
     required this.child,
     required this.scrollController,
-    required this.horizontalCellCount,
-    required this.verticalCellCount,
     Key? key,
   }) : super(key: key);
 
@@ -22,11 +18,6 @@ class GridLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Row(
-          children: const <Widget>[
-            SelectionField(),
-          ],
-        ),
         Expanded(
           child: Row(
             children: <Widget>[

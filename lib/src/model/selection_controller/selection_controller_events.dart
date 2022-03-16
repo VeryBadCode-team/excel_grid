@@ -38,7 +38,6 @@ class MultiCellSelectStartEvent extends SelectionEvent {
   }
 }
 
-
 class MultiCellSelectUpdateEvent extends SelectionEvent {
   final CellPosition toPosition;
 
@@ -277,11 +276,27 @@ class CellEditingEvent extends SingleCellSelectEvent {
 
 class KeyPressedEvent extends CellEditingEvent {
   final String keyValue;
+
   KeyPressedEvent({required CellPosition cellPosition, required this.keyValue}) : super(cellPosition);
 
   @override
   void execute(SelectionController selectionController) {
     selectionController.state = CellEditingKeyPressedState(cellPosition: cellPosition, keyValue: keyValue);
+    selectionController.notifyShouldUpdate();
+  }
+}
+
+class ExtendSelection extends SelectionEvent {
+  final CellPosition to;
+
+  ExtendSelection({
+    required this.to,
+  });
+
+  @override
+  void execute(SelectionController selectionController) {
+    CellPosition from = selectionController.state.focusedCell;
+    selectionController.state = MultiSelectedEndState(from: from, to: to);
     selectionController.notifyShouldUpdate();
   }
 }

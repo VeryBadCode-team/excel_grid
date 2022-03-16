@@ -1,4 +1,5 @@
 import 'package:excel_grid/src/core/locator.dart';
+import 'package:excel_grid/src/model/decoration_manager/decoration_manager.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_states.dart';
 import 'package:excel_grid/src/model/grid_config.dart';
@@ -37,17 +38,19 @@ abstract class ScrolledEvent extends ScrollEvent {
 
   Offset _getLimitedOffset(Offset scrollOffset) {
     GridConfig gridConfig = globalLocator<GridConfig>();
-
+    DecorationManager decorationManager = globalLocator<DecorationManager>();
     final double translatedX = _cutToRange(
-      value: scrollOffset.dx,
-      viewportItemsCount: scrollController.visibleColumns,
+      offset: scrollOffset.dx,
+      visibleItemsCount: scrollController.visibleColumnsCount,
       allItemsCount: gridConfig.columnsCount,
+      additionalItems: decorationManager.theme.horizontalMarginCellsCount,
     );
 
     final double translatedY = _cutToRange(
-      value: scrollOffset.dy,
-      viewportItemsCount: scrollController.visibleRows,
+      offset: scrollOffset.dy,
+      visibleItemsCount: scrollController.visibleRowsCount,
       allItemsCount: gridConfig.rowsCount,
+      additionalItems: decorationManager.theme.verticalMarginCellsCount,
     );
     return Offset(
       translatedX,
@@ -56,17 +59,19 @@ abstract class ScrolledEvent extends ScrollEvent {
   }
 
   double _cutToRange({
-    required double value,
-    required int viewportItemsCount,
+    required double offset,
+    required int visibleItemsCount,
     required int allItemsCount,
+    required int additionalItems,
   }) {
-    if (value < 0) {
+    if (offset < 0) {
       return 0;
     }
-    if (value + viewportItemsCount > allItemsCount) {
-      return (allItemsCount - viewportItemsCount).toDouble();
+    print(visibleItemsCount);
+    if (offset + visibleItemsCount >= allItemsCount + additionalItems ) {
+      return (allItemsCount + additionalItems - visibleItemsCount).toDouble();
     }
-    return value;
+    return offset;
   }
 
   void _scroll(Offset offset) {

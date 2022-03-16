@@ -275,6 +275,14 @@ class ExcelKeyboardListener extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _ExcelKeyboardListener();
+
+  static _ExcelKeyboardListener of(BuildContext context) {
+    final _ExcelKeyboardListener? result = context.findAncestorStateOfType<_ExcelKeyboardListener>();
+    if (result != null) {
+      return result;
+    }
+    throw Exception('Cannot get _ExcelKeyboardListener state');
+  }
 }
 
 class _ExcelKeyboardListener extends State<ExcelKeyboardListener> {

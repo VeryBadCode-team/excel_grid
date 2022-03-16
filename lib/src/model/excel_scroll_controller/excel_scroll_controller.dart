@@ -3,8 +3,6 @@ import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_s
 import 'package:flutter/material.dart';
 
 class ExcelScrollController extends ChangeNotifier {
-  late int visibleRows;
-  late int visibleColumns;
 
   ScrollState state = DefaultScrollState();
 
@@ -13,11 +11,11 @@ class ExcelScrollController extends ChangeNotifier {
   double contentWidth = 0;
   double contentHeight = 0;
 
+  int visibleColumnsCount = 0;
+  int visibleRowsCount = 0;
+
   double? _verticalViewport;
   double? _horizontalViewport;
-
-  double? _verticalStep;
-  double? _horizontalStep;
 
   ExcelScrollController();
 
@@ -31,40 +29,16 @@ class ExcelScrollController extends ChangeNotifier {
     return _horizontalViewport!;
   }
 
-  double get verticalStep {
-    assert(_verticalStep != null, 'Vertical step is not initialized');
-    return _verticalStep!;
-  }
-
-  double get horizontalStep {
-    assert(_horizontalStep != null, 'Vertical step is not initialized');
-    return _horizontalStep!;
-  }
-
   void handleEvent(ScrollEvent event) {
     event.execute(this);
   }
 
-  void init({
-    required int visibleRows,
-    required int visibleColumns,
+  void onWindowSizeChanged({
+    required double maxWidth,
+    required double maxHeight,
   }) {
-    this.visibleRows = visibleRows;
-    this.visibleColumns = visibleColumns;
-  }
-
-  void setVerticalViewport(int rowsCount, double maxScrollOffset) {
-    if (maxScrollOffset != _verticalViewport) {
-      _verticalViewport = maxScrollOffset;
-      _verticalStep = rowsCount / maxScrollOffset;
-    }
-  }
-
-  void setHorizontalViewport(int columnsCount, double maxScrollOffset) {
-    if (maxScrollOffset != _horizontalViewport) {
-      _horizontalViewport = maxScrollOffset;
-      _horizontalStep = columnsCount / maxScrollOffset;
-    }
+    _verticalViewport = maxHeight;
+    _horizontalViewport = maxWidth;
   }
 
   void notifyShouldUpdate() {

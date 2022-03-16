@@ -1,18 +1,20 @@
+import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
 import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_states.dart';
+import 'package:excel_grid/src/model/grid_config.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scroll_thumb.dart';
 import 'package:flutter/material.dart';
 
 class HorizontalScrollbar extends StatefulWidget {
-  final ExcelScrollController scrollController;
   final double thumbSize;
   final double barMaxScrollExtent;
+  final BoxConstraints constraints;
 
   const HorizontalScrollbar({
-    required this.scrollController,
     required this.thumbSize,
     required this.barMaxScrollExtent,
+    required this.constraints,
     Key? key,
   }) : super(key: key);
 
@@ -21,6 +23,9 @@ class HorizontalScrollbar extends StatefulWidget {
 }
 
 class _HorizontalScrollbar extends State<HorizontalScrollbar> {
+  final ExcelScrollController scrollController = globalLocator<ExcelScrollController>();
+  final GridConfig gridConfig = globalLocator<GridConfig>();
+
   /// Counts offset for scroll thumb in Vertical axis
   late double barOffset;
 
@@ -28,15 +33,17 @@ class _HorizontalScrollbar extends State<HorizontalScrollbar> {
 
   double get barMinScrollExtent => 0.0;
 
+  double get horizontalStep => gridConfig.columnsCount / widget.constraints.maxWidth;
+
   @override
   void initState() {
     super.initState();
-    widget.scrollController.addListener(() {
+    scrollController.addListener(() {
       if (mounted) {
-        ScrollState scrollState = widget.scrollController.state;
+        ScrollState scrollState = scrollController.state;
         if (scrollState is HorizontalScrolledState && scrollState.scrollSource != ScrollSource.scrollbar) {
           setState(() {
-            _updateBarOffset(widget.scrollController.offset.dx / widget.scrollController.horizontalStep);
+            _updateBarOffset(scrollController.offset.dx / horizontalStep);
           });
         }
       }
@@ -64,11 +71,11 @@ class _HorizontalScrollbar extends State<HorizontalScrollbar> {
     double newBarOffset = barOffset + details.delta.dx;
     _updateBarOffset(newBarOffset);
 
-    double scrollPosition = barOffset * widget.scrollController.horizontalStep;
-    widget.scrollController.handleEvent(
+    double scrollPosition = barOffset * horizontalStep;
+    scrollController.handleEvent(
       ScrollbarScrolledEvent(
         horizontalOffset: scrollPosition,
-        verticalOffset: widget.scrollController.offset.dy,
+        verticalOffset: scrollController.offset.dy,
       ),
     );
     setState(() {});
