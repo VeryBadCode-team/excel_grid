@@ -1,11 +1,17 @@
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/core/theme/horizontal_title_cell_theme/horizontal_title_cell_theme.dart';
-import 'package:excel_grid/src/dto/grid_position.dart';
-import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
+import 'package:excel_grid/src/core/theme/title_cell_theme/title_cell_theme.dart';
+import 'package:excel_grid/src/manager/decoration_manager/decoration_manager.dart';
+import 'package:excel_grid/src/manager/scroll_manager/scroll_manager.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_column_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_row_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/selection_manager.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/column_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/multi_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/row_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/selected_all_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/selection_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/single_selected_state.dart';
+import 'package:excel_grid/src/models/dto/grid_position.dart';
 import 'package:flutter/material.dart';
 
 enum GridDirection {
@@ -28,7 +34,7 @@ class CellTitle extends StatefulWidget {
   final double height;
   final BorderSide borderSide;
   final Color backgroundColor;
-  final ExcelScrollController scrollController;
+  final ScrollManager scrollManager;
   final TitleConfig titleConfig;
 
   const CellTitle({
@@ -37,7 +43,7 @@ class CellTitle extends StatefulWidget {
     required this.borderSide,
     required this.backgroundColor,
     required this.titleConfig,
-    required this.scrollController,
+    required this.scrollManager,
     Key? key,
   }) : super(key: key);
 
@@ -46,51 +52,55 @@ class CellTitle extends StatefulWidget {
 }
 
 class _CellTitle extends State<CellTitle> {
-  final SelectionController selectionController = globalLocator<SelectionController>();
+  final SelectionManager selectionManager = globalLocator<SelectionManager>();
+  final DecorationManager decorationManager = globalLocator<DecorationManager>();
 
   @override
   void initState() {
-    selectionController.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    selectionManager.addListener(_rebuildWidget);
     super.initState();
   }
 
   @override
+  void dispose() {
+    selectionManager.removeListener(_rebuildWidget);
+    super.dispose();
+  }
+
+
+  @override
   Widget build(BuildContext context) {
-    HorizontalTitleCellTheme horizontalTitleCellTheme = InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme;
+    TitleCellTheme titleCellTheme = decorationManager.theme.titleCellTheme;
     return MouseRegion(
       onEnter: (_) {
-        bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
-        bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
+        bool rowSelectionInProgress = selectionManager.state is RowSelectionOngoingState;
+        bool columnSelectionInProgress = selectionManager.state is ColumnSelectionOngoingState;
         if (rowSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.titleConfig.position));
+          selectionManager.handleEvent(ContinueSelectingMultipleRowsEvent(widget.titleConfig.position));
         } else if (columnSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.titleConfig.position));
+          selectionManager.handleEvent(ContinueSelectingMultipleColumnsEvent(widget.titleConfig.position));
         }
       },
       child: GestureDetector(
         onTap: () {
           if (widget.titleConfig.direction == GridDirection.horizontal) {
-            selectionController.handleEvent(SelectRowEvent(widget.titleConfig.position));
+            selectionManager.handleEvent(SelectRowEvent(widget.titleConfig.position));
           } else {
-            selectionController.handleEvent(SelectColumnEvent(widget.titleConfig.position));
+            selectionManager.handleEvent(SelectColumnEvent(widget.titleConfig.position));
           }
         },
         onPanStart: (_) {
           if (widget.titleConfig.direction == GridDirection.horizontal) {
-            selectionController.handleEvent(SelectMulitRowStartEvent(fromPosition: widget.titleConfig.position));
+            selectionManager.handleEvent(StartSelectingMultipleRowsEvent(selectFromRow: widget.titleConfig.position));
           } else if (widget.titleConfig.direction == GridDirection.vertical) {
-            selectionController.handleEvent(SelectMulitColumnStartEvent(fromPosition: widget.titleConfig.position));
+            selectionManager.handleEvent(StartSelectingMultipleColumnsEvent(selectFromColumn: widget.titleConfig.position));
           }
         },
         onPanEnd: (_) {
           if (widget.titleConfig.direction == GridDirection.horizontal) {
-            selectionController.handleEvent(SelectMulitRowEndEvent());
+            selectionManager.handleEvent(FinishSelectingMultipleRowsEvent());
           } else {
-            selectionController.handleEvent(SelectMulitColumnEndEvent());
+            selectionManager.handleEvent(FinishSelectingMultipleColumnsEvent());
           }
         },
         child: Container(
@@ -104,13 +114,19 @@ class _CellTitle extends State<CellTitle> {
             child: Text(widget.titleConfig.position.key,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: horizontalTitleCellTheme.textStyle.fontSize,
-                  color: (isRowSelected || isColumnSelected) ? Colors.white : horizontalTitleCellTheme.textStyle.color,
+                  fontSize: titleCellTheme.textStyle.fontSize,
+                  color: (isRowSelected || isColumnSelected) ? Colors.white : titleCellTheme.textStyle.color,
                 )),
           ),
         ),
       ),
     );
+  }
+
+  void _rebuildWidget() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Color _getBackgroundColor() {
@@ -124,8 +140,8 @@ class _CellTitle extends State<CellTitle> {
   }
 
   bool get isRowSelected {
-    SelectionState state = selectionController.state;
-    if( state is SelectedAllState) {
+    SelectionState state = selectionManager.state;
+    if (state is SelectedAllState) {
       return true;
     }
     bool isSameHorizontal = state is RowSelectedState && widget.titleConfig.direction == GridDirection.horizontal;
@@ -136,11 +152,11 @@ class _CellTitle extends State<CellTitle> {
   }
 
   bool get isColumnSelected {
-    SelectionState state = selectionController.state;
-    if( state is SelectedAllState) {
+    SelectionState state = selectionManager.state;
+    if (state is SelectedAllState) {
       return true;
     }
-    bool isSameVertical = state is ColumnSelectedState  && widget.titleConfig.direction == GridDirection.vertical;
+    bool isSameVertical = state is ColumnSelectedState && widget.titleConfig.direction == GridDirection.vertical;
     if (isSameVertical) {
       return state.isTitleCellSelected(widget.titleConfig.position, GridDirection.vertical);
     }
@@ -148,13 +164,13 @@ class _CellTitle extends State<CellTitle> {
   }
 
   bool get isSelected {
-    SelectionState state = selectionController.state;
-    if (state is SingleSelectedState) {
+    SelectionState state = selectionManager.state;
+    if (state is SingleCellSelectedState) {
       if (widget.titleConfig.direction == GridDirection.horizontal) {
-        return state.cellPosition.verticalPosition == widget.titleConfig.position;
+        return state.cellPosition.columnPosition == widget.titleConfig.position;
       }
-      return state.cellPosition.horizontalPosition == widget.titleConfig.position;
-    } else if (state is MultiSelectedState) {
+      return state.cellPosition.rowPosition == widget.titleConfig.position;
+    } else if (state is MultipleCellsSelectedState) {
       return state.isTitleCellSelected(widget.titleConfig.position, widget.titleConfig.direction);
     }
     return false;

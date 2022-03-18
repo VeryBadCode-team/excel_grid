@@ -1,8 +1,10 @@
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_states.dart';
-import 'package:excel_grid/src/model/grid_config.dart';
+import 'package:excel_grid/src/manager/grid_config_manager/grid_config_manager.dart';
+import 'package:excel_grid/src/manager/scroll_manager/events/scroll_scrollbar_event.dart';
+import 'package:excel_grid/src/manager/scroll_manager/models/scroll_source.dart';
+import 'package:excel_grid/src/manager/scroll_manager/scroll_manager.dart';
+import 'package:excel_grid/src/manager/scroll_manager/states/scroll_state.dart';
+import 'package:excel_grid/src/manager/scroll_manager/states/scrolled_state.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/scroll_thumb.dart';
 import 'package:flutter/material.dart';
 
@@ -23,8 +25,8 @@ class VerticalScrollbar extends StatefulWidget {
 }
 
 class _VerticalScrollbar extends State<VerticalScrollbar> {
-  final ExcelScrollController scrollController = globalLocator<ExcelScrollController>();
-  final GridConfig gridConfig = globalLocator<GridConfig>();
+  final ScrollManager scrollManager = globalLocator<ScrollManager>();
+  final GridConfigManager gridConfigManager = globalLocator<GridConfigManager>();
 
   /// Counts offset for scroll thumb in Vertical axis
   late double barOffset;
@@ -33,19 +35,19 @@ class _VerticalScrollbar extends State<VerticalScrollbar> {
 
   double get barMinScrollExtent => 0.0;
 
-  double get verticalStep => gridConfig.rowsCount / widget.constraints.maxHeight;
+  double get verticalStep => gridConfigManager.rowsCount / widget.constraints.maxHeight;
 
   @override
   void initState() {
     super.initState();
     barOffset = 0.0;
 
-    scrollController.addListener(() {
+    scrollManager.addListener(() {
       if (mounted) {
-        ScrollState scrollState = scrollController.state;
+        ScrollState scrollState = scrollManager.state;
         if (scrollState is VerticalScrolledState && scrollState.scrollSource != ScrollSource.scrollbar) {
           setState(() {
-            _updateBarOffset(scrollController.offset.dy / verticalStep);
+            _updateBarOffset(scrollManager.offset.dy / verticalStep);
           });
         }
       }
@@ -74,9 +76,9 @@ class _VerticalScrollbar extends State<VerticalScrollbar> {
     _updateBarOffset(newBarOffset);
 
     double scrollPosition = barOffset * verticalStep;
-    scrollController.handleEvent(
-      ScrollbarScrolledEvent(
-        horizontalOffset: scrollController.offset.dx,
+    scrollManager.handleEvent(
+      ScrollbarScrollEvent(
+        horizontalOffset: scrollManager.offset.dx,
         verticalOffset: scrollPosition,
       ),
     );

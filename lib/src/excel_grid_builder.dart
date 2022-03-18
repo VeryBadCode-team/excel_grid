@@ -1,37 +1,25 @@
-import 'package:excel_grid/excel_grid.dart';
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
-import 'package:excel_grid/src/excel_keyboard_listener.dart';
-import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/decoration_manager/decoration_manager.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
-import 'package:excel_grid/src/model/grid_config.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
-import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
-import 'package:excel_grid/src/ui/cells/cell_builder.dart';
-import 'package:excel_grid/src/ui/layout/grid_layout.dart';
-import 'package:excel_grid/src/utils/cell_title_generator/cell_title_generator.dart';
-import 'package:excel_grid/src/widgets/scroll_detector.dart';
+import 'package:excel_grid/src/core/theme/column_title_cell_theme/column_title_cell_theme.dart';
+import 'package:excel_grid/src/core/theme/row_title_cell_theme/row_title_cell_theme.dart';
+import 'package:excel_grid/src/core/theme/title_cell_theme/title_cell_theme.dart';
+import 'package:excel_grid/src/layout_cell_builder.dart';
+import 'package:excel_grid/src/manager/decoration_manager/decoration_manager.dart';
+import 'package:excel_grid/src/manager/grid_config_manager/grid_config_manager.dart';
+import 'package:excel_grid/src/manager/scroll_manager/scroll_manager.dart';
+import 'package:excel_grid/src/ui/cells/cell_end.dart';
+import 'package:excel_grid/src/ui/cells/cell_narrow.dart';
+import 'package:excel_grid/src/ui/cells/cell_title.dart';
+import 'package:excel_grid/src/ui/cells/excel_cell.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class ExcelGridBuilder extends StatefulWidget {
-  final int maxRows;
-  final int maxColumns;
-  final CellTitleGenerator horizontalCellTitleGenerator;
-  final CellTitleGenerator verticalCellTitleGenerator;
-  final GridData gridData;
-  final BoxConstraints constraints;
-  final ExcelGridTheme theme;
+  final ScrollManager scrollManager;
+  final Size excelSize;
 
   const ExcelGridBuilder({
-    required this.maxRows,
-    required this.maxColumns,
-    required this.horizontalCellTitleGenerator,
-    required this.verticalCellTitleGenerator,
-    required this.gridData,
-    required this.constraints,
-    required this.theme,
+    required this.scrollManager,
+    required this.excelSize,
     Key? key,
   }) : super(key: key);
 
@@ -41,103 +29,101 @@ class ExcelGridBuilder extends StatefulWidget {
 
 class _ExcelGridBuilder extends State<ExcelGridBuilder> {
   final DecorationManager decorationManager = globalLocator<DecorationManager>();
-  final ExcelScrollController scrollController = globalLocator<ExcelScrollController>();
-  final SelectionController selectionController = globalLocator<SelectionController>();
-  final StorageManager storageManager = globalLocator<StorageManager>();
-  final GridConfig gridConfig = globalLocator<GridConfig>();
-  final FocusNode focusNode = FocusNode();
-
-  // final List<KeyboardAction> keyboardActions = <KeyboardAction>[
-  //
-  // ]
+  final GridConfigManager gridConfigManager = globalLocator<GridConfigManager>();
 
   @override
   void initState() {
-    decorationManager.theme = widget.theme;
-    gridConfig.init(
-      rowsCount: widget.maxRows,
-      columnsCount: widget.maxColumns,
-      horizontalCellTitleGenerator: widget.horizontalCellTitleGenerator,
-      verticalCellTitleGenerator: widget.verticalCellTitleGenerator,
-    );
-
-    _configureScrollController();
-    scrollController.addListener(() {
-      SelectionState state = selectionController.state;
-      if (state is CellEditingState) {
-        selectionController.state = SingleSelectedState(state.cellPosition);
-      }
-    });
-
-
-
-    selectionController.addListener(() {
-      focusNode.requestFocus();
-    });
-
-    storageManager.init(widget.gridData);
-
+    widget.scrollManager.addListener(_rebuildWidget);
     super.initState();
   }
 
   @override
-  void didUpdateWidget(covariant ExcelGridBuilder oldWidget) {
-    _configureScrollController();
-    super.didUpdateWidget(oldWidget);
+  void dispose() {
+    widget.scrollManager.removeListener(_rebuildWidget);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ScrollDetector(
-      scrollController: scrollController,
-      child: ExcelKeyboardListener(
-        gridFocusNode: focusNode,
-        child: GridLayout(
-          scrollController: scrollController,
-          child: _buildExcelGrid(),
-        ),
+    return Stack(
+      fit: StackFit.expand,
+      children: LayoutCellBuilder(
+        maxColumnsCount: gridConfigManager.columnsCount,
+        maxRowsCount: gridConfigManager.rowsCount,
+        rowsScrollOffset: widget.scrollManager.offset.dy.toInt(),
+        columnsScrollOffset: widget.scrollManager.offset.dx.toInt(),
+        verticalCellTitleGenerator: gridConfigManager.verticalCellTitleGenerator,
+        horizontalCellTitleGenerator: gridConfigManager.horizontalCellTitleGenerator,
+        calculateRowHeight: decorationManager.getRowHeight,
+        calculateColumnWidth: decorationManager.getColumnWidth,
+        narrowCellBuilder: _buildCellNarrow,
+        cellBuilder: _buildCell,
+        overlapCellBuilder: _buildOverlapCell,
+        columnTitleCellBuilder: _buildColumnsTitleCell,
+        rowTitleCellBuilder: _buildRowTitleCell,
+        onGridSizeCalculated: (int rowsCount, int columnsCount) {
+          widget.scrollManager.visibleColumnsCount = columnsCount;
+          widget.scrollManager.visibleRowsCount = rowsCount;
+        },
+      ).build(widget.excelSize),
+    );
+  }
+
+  void _rebuildWidget() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Widget _buildCellNarrow() {
+    return const CellNarrow();
+  }
+
+  Widget _buildCell(CellBuildData cellBuildData) {
+    return ExcelCell(
+      cellPosition: cellBuildData.cellPosition,
+    );
+  }
+
+  Widget _buildColumnsTitleCell(TitleCellBuildData titleCellBuildData) {
+    TitleCellTheme titleCellTheme = decorationManager.theme.titleCellTheme;
+    ColumnTitleCellTheme columnTitleCellTheme = decorationManager.theme.columnTitleCellTheme;
+
+    return CellTitle(
+      titleConfig: TitleConfig(
+        position: titleCellBuildData.gridPosition,
+        direction: GridDirection.vertical,
       ),
+      scrollManager: widget.scrollManager,
+      width: decorationManager.getColumnWidth(titleCellBuildData.gridPosition.index),
+      height: columnTitleCellTheme.height,
+      borderSide: titleCellTheme.borderSide,
+      backgroundColor: titleCellTheme.backgroundColor,
     );
   }
 
-  void _configureScrollController() {
-    scrollController.onWindowSizeChanged(
-      maxWidth: widget.constraints.maxWidth,
-      maxHeight: widget.constraints.maxHeight,
-    );
-    scrollController.contentWidth = decorationManager.getContentWidth();
-    scrollController.contentHeight = decorationManager.getContentHeight();
+  Widget _buildRowTitleCell(TitleCellBuildData titleCellBuildData) {
+    TitleCellTheme titleCellTheme = decorationManager.theme.titleCellTheme;
+    RowTitleCellTheme rowTitleCellTheme = decorationManager.theme.rowTitleCellTheme;
 
-    scrollController.visibleColumnsCount = decorationManager.getVisibleColumnsCount();
-    scrollController.visibleRowsCount = decorationManager.getVisibleRowsCount();
-  }
-
-  Widget _buildExcelGrid() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      scrollDirection: Axis.vertical,
-      itemCount: scrollController.visibleRowsCount,
-      itemBuilder: (_, int rowIndex) => _buildGridRow(rowIndex),
-    );
-  }
-
-  Widget _buildGridRow(int rowIndex) {
-    return SizedBox(
-      height: rowIndex == 0
-          ? InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.height
-          : InheritedExcelTheme.of(context).theme.cellTheme.height,
-      child: ListView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        scrollDirection: Axis.horizontal,
-        itemCount: scrollController.visibleColumnsCount,
-        itemBuilder: (_, int columnIndex) => CellBuilder(
-          scrollController: scrollController,
-          maxRows: widget.maxRows,
-          maxColumns: widget.maxColumns,
-          columnIndex: columnIndex,
-          rowIndex: rowIndex,
-        ),
+    return CellTitle(
+      titleConfig: TitleConfig(
+        position: titleCellBuildData.gridPosition,
+        direction: GridDirection.horizontal,
       ),
+      scrollManager: widget.scrollManager,
+      width: rowTitleCellTheme.width,
+      height: decorationManager.getRowHeight(titleCellBuildData.gridPosition.index),
+      borderSide: titleCellTheme.borderSide,
+      backgroundColor: titleCellTheme.backgroundColor,
+    );
+  }
+
+  Widget _buildOverlapCell(CellBuildData cellBuildData) {
+    return CellEnd(
+      width: decorationManager.getColumnWidth(cellBuildData.cellPosition.rowPosition.index),
+      height: decorationManager.getRowHeight(cellBuildData.cellPosition.columnPosition.index),
+      backgroundColor: const Color(0xFFF3F3F3),
     );
   }
 }

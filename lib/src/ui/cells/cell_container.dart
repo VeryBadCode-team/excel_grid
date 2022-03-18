@@ -1,9 +1,10 @@
 import 'package:excel_grid/src/core/locator.dart';
 import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
-import 'package:excel_grid/src/dto/cell_position.dart';
-import 'package:excel_grid/src/model/autofill_manager/autofill_manager.dart';
-import 'package:excel_grid/src/model/autofill_manager/autofill_manager_events.dart';
-import 'package:excel_grid/src/utils/enums/append_border.dart';
+import 'package:excel_grid/src/models/dto/cell_position.dart';
+import 'package:excel_grid/src/manager/autofill_manager/autofill_manager.dart';
+import 'package:excel_grid/src/manager/autofill_manager/events/autofill_selection_event.dart';
+import 'package:excel_grid/src/models/custom_border.dart';
+import 'package:excel_grid/src/shared/enums/append_border.dart';
 import 'package:flutter/material.dart';
 
 class CellContainer extends StatelessWidget {
@@ -66,11 +67,11 @@ class CellContainer extends StatelessWidget {
                 child: GestureDetector(
                   onPanStart: (_) {
                     AutofillManager autofillManager = globalLocator<AutofillManager>();
-                    autofillManager.handleEvent(AutofillStarted(cellPosition));
+                    autofillManager.handleEvent(StartAutofillSelectionEvent(cellPosition));
                   },
                   onPanEnd: (_) {
                     AutofillManager autofillManager = globalLocator<AutofillManager>();
-                    autofillManager.handleEvent(AutofillEnd());
+                    autofillManager.handleEvent(FinishAutofillSelectionEvent());
                   },
                   child: Container(
                     height: 6,
@@ -86,32 +87,13 @@ class CellContainer extends StatelessWidget {
   }
 
   BoxDecoration _boxDecoration() {
-    Border defaultBorder = Border(
-      top: theme.selectionTheme.primaryBorderSide.copyWith(
-        color: Colors.transparent,
-      ),
-      left: theme.selectionTheme.primaryBorderSide.copyWith(
-        color: Colors.transparent,
-      ),
-      right: theme.cellTheme.borderSide,
-      bottom: theme.cellTheme.borderSide,
-    );
     if (autofillBorder.isNotEmpty) {
       return BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: autofillBorder.contains(AppendBorder.top)
-              ? const BorderSide(width: 0.5, color: Colors.black)
-              : defaultBorder.top,
-          bottom: autofillBorder.contains(AppendBorder.bottom)
-              ? const BorderSide(width: 0.5, color: Colors.black)
-              : defaultBorder.bottom,
-          left: autofillBorder.contains(AppendBorder.left)
-              ? const BorderSide(width: 0.5, color: Colors.black)
-              : defaultBorder.left,
-          right: autofillBorder.contains(AppendBorder.right)
-              ? const BorderSide(width: 0.5, color: Colors.black)
-              : defaultBorder.right,
+        border: CustomBorder.fromAppendBorder(
+          visibleBorders: autofillBorder,
+          borderSide: const BorderSide(width: 0.5, color: Colors.black),
+          defaultBorder: theme.cellTheme.borderSide,
         ),
       );
     }
@@ -138,29 +120,17 @@ class CellContainer extends StatelessWidget {
     } else if (isSelectedCell) {
       return BoxDecoration(
         color: theme.selectionTheme.backgroundColor,
-        border: Border(
-            top: multiSelectionBorder.contains(AppendBorder.top)
-                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
-                : theme.selectionTheme.primaryBorderSide.copyWith(
-                    color: Colors.transparent,
-                  ),
-            bottom: multiSelectionBorder.contains(AppendBorder.bottom)
-                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
-                : theme.cellTheme.borderSide,
-            left: multiSelectionBorder.contains(AppendBorder.left)
-                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
-                : theme.selectionTheme.primaryBorderSide.copyWith(
-                    color: Colors.transparent,
-                  ),
-            right: multiSelectionBorder.contains(AppendBorder.right)
-                ? theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5)
-                : theme.cellTheme.borderSide),
+        border: CustomBorder.fromAppendBorder(
+          visibleBorders: multiSelectionBorder,
+          borderSide: theme.selectionTheme.primaryBorderSide.copyWith(width: 0.5),
+          defaultBorder: theme.cellTheme.borderSide,
+        ),
       );
     }
 
     return BoxDecoration(
       color: Colors.white,
-      border: defaultBorder,
+      border: Border.fromBorderSide(theme.cellTheme.borderSide),
     );
   }
 }

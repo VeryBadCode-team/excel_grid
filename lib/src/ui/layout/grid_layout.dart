@@ -1,16 +1,15 @@
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
+import 'package:excel_grid/src/manager/scroll_manager/scroll_manager.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/horizontal_scrollbar/horizontal_scrollbar_container.dart';
 import 'package:excel_grid/src/ui/layout/scrollbar/vertical_scrollbar/vertical_scrollbar_container.dart';
-import 'package:excel_grid/src/ui/layout/selection_field.dart';
 import 'package:flutter/material.dart';
 
 class GridLayout extends StatelessWidget {
   final Widget child;
-  final ExcelScrollController scrollController;
+  final ScrollManager scrollManager;
 
   const GridLayout({
     required this.child,
-    required this.scrollController,
+    required this.scrollManager,
     Key? key,
   }) : super(key: key);
 
@@ -25,19 +24,19 @@ class GridLayout extends StatelessWidget {
                 behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
                 child: Expanded(
                   child: Container(
-                    color: Colors.black12,
+                    color: const Color(0xFFF3F3F3),
                     child: child,
                   ),
                 ),
               ),
               VerticalScrollbarContainer(
-                scrollController: scrollController,
+                scrollManager: scrollManager,
               )
             ],
           ),
         ),
         HorizontalScrollbarContainer(
-          scrollController: scrollController,
+          scrollManager: scrollManager,
         ),
       ],
     );

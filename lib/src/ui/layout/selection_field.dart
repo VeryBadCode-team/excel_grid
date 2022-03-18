@@ -1,5 +1,5 @@
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
+import 'package:excel_grid/src/manager/selection_controller/selection_manager.dart';
 import 'package:flutter/cupertino.dart';
 
 class SelectionField extends StatefulWidget {
@@ -10,24 +10,33 @@ class SelectionField extends StatefulWidget {
 }
 
 class _SelectionField extends State<SelectionField> {
-  final SelectionController selectionController = globalLocator<SelectionController>();
+  final SelectionManager selectionManager = globalLocator<SelectionManager>();
 
   @override
   void initState() {
-    selectionController.addListener(() {
-      setState(() {
-
-      });
-    });
+    selectionManager.addListener(_rebuildWidget);
     super.initState();
   }
+
+  @override
+  void dispose() {
+    selectionManager.removeListener(_rebuildWidget);
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 120,
       height: 30,
-      child: Text(selectionController.state.toString()),
+      child: Text(selectionManager.state.toString()),
     );
+  }
+
+  void _rebuildWidget() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

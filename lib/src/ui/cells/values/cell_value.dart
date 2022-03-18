@@ -1,9 +1,13 @@
-import 'package:excel_grid/src/model/autofill_manager/cell_filler.dart';
+import 'package:excel_grid/src/manager/autofill_manager/model/auto_filler/auto_filler.dart';
+import 'package:excel_grid/src/manager/autofill_manager/model/auto_filler/date_time_auto_filler.dart';
+import 'package:excel_grid/src/manager/autofill_manager/model/auto_filler/linear_regression_auto_filler.dart';
+import 'package:excel_grid/src/manager/autofill_manager/model/auto_filler/repeat_selectrion_auto_filler.dart';
+import 'package:flutter/material.dart';
 
 abstract class CellValue {
   String get asString;
 
-  CellAutoFiller get autoFiller;
+  AutoFiller get autoFiller;
 
   static CellValue assign(dynamic value) {
     List<CellValueBuilder> cellValueBuilders = <CellValueBuilder>[
@@ -54,7 +58,7 @@ class TextCellValue extends CellValue {
   String get asString => value;
 
   @override
-  CellAutoFiller get autoFiller => RepeatSelectionAutoFiller();
+  AutoFiller get autoFiller => RepeatSelectionAutoFiller();
 }
 
 class NumberCellValueBuilder extends CellValueBuilder {
@@ -85,7 +89,7 @@ class NumberCellValue extends CellValue {
   String get asString => value.toString();
 
   @override
-  CellAutoFiller get autoFiller => LinearRegressionAutoFiller();
+  AutoFiller get autoFiller => LinearRegressionAutoFiller();
 }
 
 class DateTimeCellValueBuilder extends CellValueBuilder {
@@ -94,12 +98,15 @@ class DateTimeCellValueBuilder extends CellValueBuilder {
 
   @override
   CellValue? tryParse(dynamic value) {
+    print(value);
     try {
       DateTime dateTimeValue = DateTime.parse(value);
+      print('success: $dateTimeValue');
       return DateTimeCellValue(
         value: dateTimeValue,
       );
-    } catch(_) {
+    } catch(e) {
+      print('error parsing $value');
       return null;
     }
   }
@@ -117,5 +124,5 @@ class DateTimeCellValue extends CellValue {
   String get asString => value.toString();
 
   @override
-  CellAutoFiller get autoFiller => DateTimeAutoFiller();
+  AutoFiller get autoFiller => DateTimeAutoFiller();
 }

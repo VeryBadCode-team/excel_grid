@@ -1,18 +1,29 @@
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/core/theme/excel_grid_theme/excel_grid_theme.dart';
-import 'package:excel_grid/src/dto/cell_position.dart';
+import 'package:excel_grid/src/models/dto/cell_position.dart';
 import 'package:excel_grid/src/excel_keyboard_listener.dart';
-import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/autofill_manager/autofill_manager.dart';
-import 'package:excel_grid/src/model/autofill_manager/autofill_manager_events.dart';
-import 'package:excel_grid/src/model/autofill_manager/autofill_manager_states.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_states.dart';
-import 'package:excel_grid/src/model/storage_manager/storage_manager.dart';
+import 'package:excel_grid/src/manager/autofill_manager/autofill_manager.dart';
+import 'package:excel_grid/src/manager/autofill_manager/events/autofill_selection_event.dart';
+import 'package:excel_grid/src/manager/autofill_manager/states/autofill_selection_state.dart';
+import 'package:excel_grid/src/manager/autofill_manager/states/autofill_state.dart';
+import 'package:excel_grid/src/manager/decoration_manager/decoration_manager.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/edit_cell_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/extend_selection_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_column_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_multiple_cells_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_row_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_single_cell_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/selection_manager.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/column_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/editing_cell_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/multi_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/row_selected_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/selection_end_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/selection_state.dart';
+import 'package:excel_grid/src/manager/selection_controller/states/single_selected_state.dart';
+import 'package:excel_grid/src/manager/storage_manager/storage_manager.dart';
 import 'package:excel_grid/src/ui/cells/cell_container.dart';
 import 'package:excel_grid/src/ui/cells/types/excel_text_cell.dart';
-import 'package:excel_grid/src/utils/enums/append_border.dart';
+import 'package:excel_grid/src/shared/enums/append_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
@@ -29,79 +40,73 @@ class ExcelCell extends StatefulWidget {
 }
 
 class _ExcelCell extends State<ExcelCell> {
-  final SelectionController selectionController = globalLocator<SelectionController>();
+  final DecorationManager decorationManager = globalLocator<DecorationManager>();
+  final SelectionManager selectionManager = globalLocator<SelectionManager>();
   final StorageManager storageManager = globalLocator<StorageManager>();
   final AutofillManager autofillManager = globalLocator<AutofillManager>();
 
   @override
   void initState() {
-    selectionController.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-    storageManager.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-    autofillManager.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    selectionManager.addListener(_rebuildWidget);
+    storageManager.addListener(_rebuildWidget);
+    autofillManager.addListener(_rebuildWidget);
     super.initState();
   }
 
   @override
+  void dispose() {
+    selectionManager.removeListener(_rebuildWidget);
+    storageManager.removeListener(_rebuildWidget);
+    autofillManager.removeListener(_rebuildWidget);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    ExcelGridTheme theme = InheritedExcelTheme.of(context).theme;
     return MouseRegion(
       onEnter: (_) {
-        bool autofillInProgress = autofillManager.state is AutofillOngoingState;
+        bool autofillInProgress = autofillManager.state is AutofillSelectionOngoingState;
         if (autofillInProgress) {
-          autofillManager.handleEvent(AutofillOngoing(widget.cellPosition));
+          autofillManager.handleEvent(ContinueAutofillSelection(widget.cellPosition));
         }
-
-        bool rowSelectionInProgress = selectionController.state is RowSelectOngoingState;
-        bool columnSelectionInProgress = selectionController.state is ColumnSelectOngoingState;
+        bool rowSelectionInProgress = selectionManager.state is RowSelectionOngoingState;
+        bool columnSelectionInProgress = selectionManager.state is ColumnSelectionOngoingState;
         if (rowSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitRowUpdateEvent(widget.cellPosition.verticalPosition));
+          selectionManager.handleEvent(ContinueSelectingMultipleRowsEvent(widget.cellPosition.columnPosition));
         } else if (columnSelectionInProgress) {
-          selectionController.handleEvent(SelectMulitColumnUpdateEvent(widget.cellPosition.horizontalPosition));
+          selectionManager.handleEvent(ContinueSelectingMultipleColumnsEvent(widget.cellPosition.rowPosition));
         }
 
-        bool selectionInProgress = selectionController.state is MultiSelectedOngoingState;
+        bool selectionInProgress = selectionManager.state is MultipleCellsSelectionOngoingState;
+
         if (selectionInProgress) {
-          selectionController.handleEvent(MultiCellSelectUpdateEvent(widget.cellPosition));
+          selectionManager.handleEvent(ContinueSelectingMultipleCellsEvent(widget.cellPosition));
         }
       },
       child: GestureDetector(
         onTap: () {
-          print('IS SHIFT PRESSED = ${ExcelKeyboardListener.of(context).keysPressed}');
-          print('IS SHIFT PRESSED = ${ExcelKeyboardListener.of(context).keysPressed.contains(LogicalKeyboardKey.shiftLeft)}');
-          if( ExcelKeyboardListener.of(context).keysPressed.contains(LogicalKeyboardKey.shiftLeft)) {
-            selectionController.handleEvent(ExtendSelection(to: widget.cellPosition));
+          if (ExcelKeyboardListener.of(context).keysPressed.contains(LogicalKeyboardKey.shiftLeft)) {
+            selectionManager.handleEvent(ExtendSelectionEvent(extendSelectionToPosition: widget.cellPosition));
           } else {
-            selectionController.handleEvent(SingleCellSelectEvent(widget.cellPosition));
+            selectionManager.handleEvent(SelectSingleCellEvent(widget.cellPosition));
           }
         },
         onDoubleTap: () {
-          SelectionState state = selectionController.state;
-          if (state is! CellEditingState) {
-            selectionController.handleEvent(CellEditingEvent(widget.cellPosition));
+          SelectionState state = selectionManager.state;
+          if (state is! EditingCellState) {
+            selectionManager.handleEvent(EditCellEvent(widget.cellPosition));
           }
         },
         onPanStart: (_) {
-          selectionController.handleEvent(MultiCellSelectStartEvent(fromPosition: widget.cellPosition));
+          selectionManager.handleEvent(StartSelectingMultipleCellsEvent(selectFromPosition: widget.cellPosition));
         },
         onPanEnd: (_) {
-          selectionController.handleEvent(MultiCellSelectEndEvent());
+          selectionManager.handleEvent(FinishSelectingMultipleCellsEvent());
         },
         child: CellContainer(
-          height: theme.cellTheme.height,
-          width: theme.cellTheme.width,
-          theme: theme,
+          height: decorationManager.getRowHeight(widget.cellPosition.columnPosition.index),
+          width: decorationManager.getColumnWidth(widget.cellPosition.rowPosition.index),
+          theme: decorationManager.theme,
           isEditing: isEditing,
           isSelectedCell: isSelected,
           multiSelectionBorder: multiSelectionBorder,
@@ -116,21 +121,27 @@ class _ExcelCell extends State<ExcelCell> {
             cellPosition: widget.cellPosition,
             value: storageManager.getCellData(widget.cellPosition),
             editing: isEditing,
-            cellPadding: theme.cellTheme.cellPadding,
+            cellPadding: decorationManager.theme.cellTheme.cellPadding,
           ),
         ),
       ),
     );
   }
 
+  void _rebuildWidget() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   bool get canAutofill {
-    SelectionState state = selectionController.state;
-    return widget.cellPosition == state.rightBottomCell && state is SelectionEndState;
+    SelectionState state = selectionManager.state;
+    return widget.cellPosition == state.corners.rightBottom && state is SelectionFinishedState;
   }
 
   bool get isEditing {
-    SelectionState state = selectionController.state;
-    if (state is CellEditingState) {
+    SelectionState state = selectionManager.state;
+    if (state is EditingCellState) {
       bool isEditingCell = state.cellPosition == widget.cellPosition;
       return isEditingCell;
     }
@@ -138,12 +149,12 @@ class _ExcelCell extends State<ExcelCell> {
   }
 
   bool get isSelected {
-    SelectionState state = selectionController.state;
-    if (state is SingleSelectedState) {
+    SelectionState state = selectionManager.state;
+    if (state is SingleCellSelectedState) {
       bool isSelectedCell = state.cellPosition == widget.cellPosition;
       return isSelectedCell;
     }
-    if (state is MultiSelectedState) {
+    if (state is MultipleCellsSelectedState) {
       bool isSelectedCell = state.isCellSelected(widget.cellPosition);
       return isSelectedCell;
     }
@@ -151,20 +162,20 @@ class _ExcelCell extends State<ExcelCell> {
   }
 
   bool get isStartSelectionCell {
-    SelectionState state = selectionController.state;
+    SelectionState state = selectionManager.state;
     return widget.cellPosition == state.focusedCell;
   }
 
   bool get isEndSelectionCell {
-    SelectionState state = selectionController.state;
-    return widget.cellPosition == state.lastFocusedCell;
+    SelectionState state = selectionManager.state;
+    return widget.cellPosition == state.endSelectionCell;
   }
 
   Set<AppendBorder> get autofillBorder {
     Set<AppendBorder> appendBorder = <AppendBorder>{};
     AutofillState state = autofillManager.state;
-    if (state is AutofillOngoingState) {
-      if(!state.selectedCellsMerged.contains(widget.cellPosition)) {
+    if (state is AutofillSelectionOngoingState) {
+      if (!state.selectedCells.merged.contains(widget.cellPosition)) {
         return appendBorder;
       }
       appendBorder.addAll(state.isVerticalSelectionExtreme(widget.cellPosition));
@@ -175,8 +186,8 @@ class _ExcelCell extends State<ExcelCell> {
 
   Set<AppendBorder> get multiSelectionBorder {
     Set<AppendBorder> appendBorder = <AppendBorder>{};
-    SelectionState state = selectionController.state;
-    if (state is MultiSelectedEndState) {
+    SelectionState state = selectionManager.state;
+    if (state is MultipleCellsSelectionFinishedState) {
       appendBorder.addAll(state.isVerticalSelectionExtreme(widget.cellPosition));
       appendBorder.addAll(state.isHorizontalSelectionExtreme(widget.cellPosition));
     }

@@ -1,8 +1,7 @@
 import 'package:excel_grid/src/core/locator.dart';
-import 'package:excel_grid/src/inherited_excel_theme.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller.dart';
-import 'package:excel_grid/src/model/selection_controller/selection_controller_events.dart';
+import 'package:excel_grid/src/manager/decoration_manager/decoration_manager.dart';
+import 'package:excel_grid/src/manager/selection_controller/events/select_all_event.dart';
+import 'package:excel_grid/src/manager/selection_controller/selection_manager.dart';
 import 'package:flutter/cupertino.dart';
 
 class CellNarrow extends StatelessWidget {
@@ -13,24 +12,25 @@ class CellNarrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SelectionController selectionController = globalLocator<SelectionController>();
+    final DecorationManager decorationManager = globalLocator<DecorationManager>();
+    SelectionManager selectionManager = globalLocator<SelectionManager>();
     return GestureDetector(
       onTap: () {
-        selectionController.handleEvent(SelectAllEvent());
+        selectionManager.handleEvent(SelectAllEvent());
       },
       child: Container(
-        width: InheritedExcelTheme.of(context).theme.verticalTitleCellTheme.width,
-        height: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.height,
+        width: decorationManager.theme.rowTitleCellTheme.width,
+        height: decorationManager.theme.columnTitleCellTheme.height,
         decoration: BoxDecoration(
-          color: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.backgroundColor,
+          color: decorationManager.theme.titleCellTheme.backgroundColor,
           border: Border(
             right: BorderSide(
               width: 4,
-              color: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.borderSide.color,
+              color: decorationManager.theme.titleCellTheme.borderSide.color,
             ),
             bottom: BorderSide(
               width: 4,
-              color: InheritedExcelTheme.of(context).theme.horizontalTitleCellTheme.borderSide.color,
+              color: decorationManager.theme.titleCellTheme.borderSide.color,
             ),
           ),
         ),

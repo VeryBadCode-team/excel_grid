@@ -10,7 +10,7 @@ class CellThemeMaterial extends CellTheme {
     double cellPadding = 8,
     Color backgroundColor = Colors.transparent,
     BorderSide borderSide = const BorderSide(
-      width: 0.5,
+      width: 0.2,
       color: MaterialExcelPalette.gray3_100,
     ),
   }) : super(

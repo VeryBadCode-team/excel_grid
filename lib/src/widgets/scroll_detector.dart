@@ -1,14 +1,14 @@
-import 'package:excel_grid/src/model/excel_scroll_controller/excel_scroll_controller.dart';
-import 'package:excel_grid/src/model/excel_scroll_controller/scroll_controller_events.dart';
+import 'package:excel_grid/src/manager/scroll_manager/events/scroll_mouse_event.dart';
+import 'package:excel_grid/src/manager/scroll_manager/scroll_manager.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class ScrollDetector extends StatelessWidget {
-  final ExcelScrollController scrollController;
+  final ScrollManager scrollManager;
   final Widget child;
 
   const ScrollDetector({
-    required this.scrollController,
+    required this.scrollManager,
     required this.child,
     Key? key,
   }) : super(key: key);
@@ -18,7 +18,7 @@ class ScrollDetector extends StatelessWidget {
     return Listener(
       onPointerSignal: (PointerSignalEvent pointerSignal) {
         if (pointerSignal is PointerScrollEvent) {
-          scrollController.handleEvent(MouseScrolledEvent(
+          scrollManager.handleEvent(MouseScrollEvent(
             horizontalOffset: _parseOffset(pointerSignal.scrollDelta.dx),
             verticalOffset: _parseOffset(pointerSignal.scrollDelta.dy),
           ));

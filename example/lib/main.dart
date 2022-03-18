@@ -27,7 +27,7 @@ class _MyAppState extends State<MyApp> {
           children: <Widget>[
             Expanded(
               child: ExcelGrid(
-                gridData: GridData.fromMap(
+                gridData: MapGridData(
                   rawData: <String, Map<String, dynamic>>{
                     '4': <String, dynamic>{
                       'B': 'Dominik',
